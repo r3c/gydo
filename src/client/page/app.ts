@@ -13,48 +13,16 @@ type Panel = {
   title: string;
 };
 
-@Component({})
+@Component
 export default class App extends Vue {
+  expression: string = "";
   script: string = "";
   scriptUrls: string[] = [];
   panels: Panel[] = [];
-  title: string;
+  title: string = "";
 
-  async mounted() {
-    const dashboard: Dashboard = {
-      panels: [
-        {
-          title: "Number of COVID tests per day",
-          renderer: RenderEngine.LineChart,
-          queries: [
-            {
-              expression: "$.datagouvfr.date ^ ($)",
-            },
-            {
-              expression: "$.datagouvfr ^ (date).testsPositifs",
-              label: "nbPositive",
-            },
-            {
-              expression: "$.datagouvfr ^ (date).testsRealises",
-              label: "nbTests",
-            },
-            {
-              expression: "$.datagouvfr ^ (date).(testsPositifs / testsRealises)",
-              label: "ratio",
-            },
-          ],
-        },
-      ],
-      sources: {
-        datagouvfr: {
-          type: SourceType.Json,
-          url:
-            "https://www.data.gouv.fr/fr/datasets/r/d2671c6c-c0eb-4e12-b69a-8e8f87fc224c",
-        },
-      },
-      title: "Sample dashboard",
-    };
-
+  public async graphRender() {
+    const dashboard = JSON.parse(this.expression);
     const response = await fetch("/api/graph/render", {
       method: "POST",
       headers: {
@@ -65,7 +33,8 @@ export default class App extends Vue {
     });
 
     const panels = [];
-    const result = (await response.json()) as Rendering;
+    const json = await response.json();
+    const result = json as Rendering;
     const scripts = [];
 
     if (result.panels !== undefined) {
@@ -99,8 +68,17 @@ export default class App extends Vue {
     }
 
     this.panels = panels;
-    this.script = scripts.join();
+    this.script = scripts.join("");
     this.title = result.title;
+
+    location.hash = escape(JSON.stringify(dashboard));
+  }
+
+  async mounted() {
+    const hash = new URL(location.href).hash;
+    const expression = unescape((hash ?? "").slice(1));
+
+    this.expression = JSON.stringify(JSON.parse(expression), null, 2);
   }
 
   async updated() {

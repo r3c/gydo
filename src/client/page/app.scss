@@ -1,0 +1,16 @@
+body {
+	background: white;
+}
+
+textarea {
+	width: 100%;
+}
+
+.dashboard {
+	display: flex;
+
+	.panel {
+		flex: 1;
+		min-width: 640;
+	}
+}

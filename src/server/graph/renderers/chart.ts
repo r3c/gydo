@@ -12,8 +12,8 @@ export const renderLineChart = (
   const datasets = series.slice(1).map((serie, index) => ({
     label: serie.label,
     data: serie.points,
-    backgroundColor: `hsl(${(index * 50) % 360}, 75%, 50%)`,
-    borderColor: `hsl(${(index * 50) % 360}, 25%, 50%)`,
+    backgroundColor: `hsl(${(index * 100) % 360}, 75%, 50%)`,
+    borderColor: `hsl(${(index * 100) % 360}, 25%, 50%)`,
   }));
 
   const labels = series[0].points;
