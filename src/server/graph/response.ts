@@ -22,6 +22,6 @@ export enum ResourceType {
 
 export type Serie = {
   errors?: string[];
-  label: string;
-  points?: number[];
+  name: string;
+  points?: any[];
 };

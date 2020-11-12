@@ -1,13 +1,12 @@
 import jsonata from "jsonata";
-import { Query } from "../request";
 import { Serie } from "../response";
 
 export const evaluateJsonata = (
-  query: Query,
+  expression: string,
   data: any
-): Omit<Serie, "label"> => {
+): Omit<Serie, "name"> => {
   try {
-    const evaluator = jsonata(query.expression);
+    const evaluator = jsonata(expression);
     const points = evaluator.evaluate(data);
 
     return {

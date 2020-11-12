@@ -78,7 +78,12 @@ export default class App extends Vue {
     const hash = new URL(location.href).hash;
     const expression = unescape((hash ?? "").slice(1));
 
-    this.expression = JSON.stringify(JSON.parse(expression), null, 2);
+    try {
+      this.expression = JSON.stringify(JSON.parse(expression), null, 2);
+      this.graphRender();
+    } catch {
+      console.log("FIXME: invalid JSON");
+    }
   }
 
   async updated() {

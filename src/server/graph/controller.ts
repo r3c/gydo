@@ -4,7 +4,6 @@ import {
   Query,
   QueryLanguage,
   RenderEngine,
-  SourceType,
 } from "./request";
 import { Rendering, PanelRendering, Serie } from "./response";
 import { Router } from "express";
@@ -17,33 +16,40 @@ const fetchAsJson = async (response: Response): Promise<any> => {
   return await response.json();
 };
 
-const evaluate = (query: Query, data: any): Omit<Serie, "label"> => {
-  const engine = query.language ?? QueryLanguage.Jsonata;
-
-  switch (engine) {
+const evaluate = (
+  language: QueryLanguage,
+  expression: string,
+  data: any
+): Omit<Serie, "name"> => {
+  switch (language) {
     case QueryLanguage.Jsonata:
-      return evaluateJsonata(query, data);
+      return evaluateJsonata(expression, data);
 
     default:
       return {
-        errors: [`unknown query engine "${engine}"`],
+        errors: [`unknown query engine "${language}"`],
       };
   }
 };
 
-const renderDashboard = async (
-  dashboard: Dashboard
-): Promise<Rendering> => {
+const renderDashboard = async (dashboard: Dashboard): Promise<Rendering> => {
   const data: { [key: string]: any } = {};
 
   // Fetch raw data from sources
   for (const key in dashboard.sources) {
     const source = dashboard.sources[key];
-    const response = await fetch(source.url);
+    const response = await fetch(source);
+    const type = response.headers.get("Content-Type") ?? "";
 
-    switch (source.type) {
-      case SourceType.Json:
+    switch (type.toLowerCase()) {
+      case "application/json":
+      case "text/json":
         data[key] = await fetchAsJson(response);
+
+        break;
+
+      default:
+        console.log(`FIXME: data source media type ${type} is not supported`);
 
         break;
     }
@@ -63,26 +69,35 @@ const renderPanel = (
   data: any
 ): Omit<PanelRendering, "title"> => {
   // Apply expressions
-  const queryErrors = [];
+  const language = panel.language ?? QueryLanguage.Jsonata;
+  const labels = evaluate(language, panel.labels, data);
+  const queryErrors: string[] = [];
   const querySeries = [];
 
-  for (let i = 0; i < panel.queries.length; ++i) {
-    const query = panel.queries[i];
-    const result = evaluate(query, data);
+  if (labels.errors !== undefined) {
+    queryErrors.concat(
+      labels.errors.map((error) => `query for labels failed: ${error}`)
+    );
+  } else if (labels.points === undefined) {
+    queryErrors.concat("query for labels didn't return numbers");
+  } else {
+    for (let i = 0; i < panel.queries.length; ++i) {
+      const query = panel.queries[i];
+      const result = evaluate(language, query.points, data);
+      const name = query.name ?? `Serie #${i}`;
 
-    if (result.errors !== undefined) {
-      queryErrors.concat(
-        result.errors.map(
-          (error) => `query "${query.expression}" couldn't execute: ${error}`
-        )
-      );
-    } else if (result.points === undefined) {
-      queryErrors.push(`query "${query.expression}" didn't return numbers`);
-    } else {
-      querySeries.push({
-        label: query.label ?? `Serie #${i}`,
-        points: result.points,
-      });
+      if (result.errors !== undefined) {
+        queryErrors.concat(
+          result.errors.map((error) => `query for ${name} failed: ${error}`)
+        );
+      } else if (result.points === undefined) {
+        queryErrors.push(`query for ${name} didn't return numbers`);
+      } else {
+        querySeries.push({
+          name: query.name ?? `Serie #${i}`,
+          points: result.points,
+        });
+      }
     }
   }
 
@@ -96,10 +111,10 @@ const renderPanel = (
   // Render panel
   switch (panel.renderer) {
     case RenderEngine.LineChart:
-      return renderLineChart(querySeries);
+      return renderLineChart(labels.points ?? [], querySeries);
 
     case RenderEngine.Debug:
-      return renderDebug(querySeries);
+      return renderDebug(labels.points ?? [], querySeries);
 
     default:
       return {

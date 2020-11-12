@@ -1,6 +1,7 @@
 import { PanelRendering, ResourceType, Serie } from "../response";
 
 export const renderLineChart = (
+  labels: string[],
   series: Serie[]
 ): Omit<PanelRendering, "title"> => {
   if (series.length < 2) {
@@ -9,14 +10,12 @@ export const renderLineChart = (
     };
   }
 
-  const datasets = series.slice(1).map((serie, index) => ({
-    label: serie.label,
+  const datasets = series.map((serie, index) => ({
+    label: serie.name,
     data: serie.points,
     backgroundColor: `hsl(${(index * 100) % 360}, 75%, 50%)`,
     borderColor: `hsl(${(index * 100) % 360}, 25%, 50%)`,
   }));
-
-  const labels = series[0].points;
 
   return {
     contents: `<canvas></canvas>`,

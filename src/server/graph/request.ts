@@ -5,15 +5,16 @@ export type Dashboard = {
 };
 
 export type Panel = {
+  labels: string;
+  language?: QueryLanguage;
   queries: Query[];
   renderer: RenderEngine;
   title: string;
 };
 
 export type Query = {
-  expression: string;
-  label?: string;
-  language?: QueryLanguage;
+  name?: string;
+  points: string;
 };
 
 export enum QueryLanguage {
@@ -26,13 +27,8 @@ export enum RenderEngine {
   LineChart,
 }
 
-export type Source = {
-  type: SourceType;
-  url: string;
-};
-
 export type SourceMap = {
-  [key: string]: Source;
+  [key: string]: string;
 };
 
 export enum SourceType {
