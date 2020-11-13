@@ -4,6 +4,7 @@
 		"esModuleInterop": true,
 		"experimentalDecorators": true,
 		"module": "commonjs",
+		"strict": true,
 		"target": "es6",
 		"noImplicitAny": true,
 		"preserveConstEnums": true,

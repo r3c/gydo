@@ -4,17 +4,18 @@ export const renderLineChart = (
   labels: string[],
   series: Serie[]
 ): Omit<PanelRendering, "title"> => {
-  if (series.length < 2) {
+  if (series.length < 1) {
     return {
-      errors: ["line chart renderer requires two or more series"],
+      errors: ["line chart renderer requires at least one serie"],
     };
   }
 
   const datasets = series.map((serie, index) => ({
     label: serie.name,
     data: serie.points,
-    backgroundColor: `hsl(${(index * 100) % 360}, 75%, 50%)`,
-    borderColor: `hsl(${(index * 100) % 360}, 25%, 50%)`,
+    backgroundColor: `hsla(${(index * 100) % 360}, 75%, 50%, 10%)`,
+    borderColor: `hsl(${(index * 100) % 360}, 50%, 50%)`,
+    borderWidth: 2,
   }));
 
   return {

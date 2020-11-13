@@ -3,17 +3,18 @@ export type PanelRendering = {
   errors?: string[];
   resources?: Resource[];
   script?: string;
-  title: string;
+  title?: string;
 };
 
 export type Rendering = {
-  panels: PanelRendering[];
-  title: string;
+  errors?: string[];
+  panels?: PanelRendering[];
+  title?: string;
 };
 
 export type Resource = {
-  type: ResourceType;
-  url: string;
+  type?: ResourceType;
+  url?: string;
 };
 
 export enum ResourceType {
@@ -22,6 +23,6 @@ export enum ResourceType {
 
 export type Serie = {
   errors?: string[];
-  name: string;
+  name?: string;
   points?: any[];
 };

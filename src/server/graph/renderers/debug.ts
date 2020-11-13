@@ -5,6 +5,6 @@ export const renderDebug = (
   series: Serie[]
 ): Omit<PanelRendering, "title"> => {
   return {
-    contents: JSON.stringify({ labels, series }),
+    contents: `<pre>${JSON.stringify({ labels, series }, null, 2)}</pre>`
   };
 };

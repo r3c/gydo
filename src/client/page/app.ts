@@ -1,10 +1,8 @@
-import { Component, Vue } from "vue-property-decorator";
-import {
-  Dashboard,
-  RenderEngine,
-  SourceType,
-} from "../../server/graph/request";
+import { Component, Vue, Watch } from "vue-property-decorator";
 import { Rendering, ResourceType } from "../../server/graph/response";
+import { apiBase } from "../../server/route";
+import { graphRender } from "../../server/graph/route";
+import { fetchJson } from "../network/http";
 
 type Panel = {
   errors?: string[];
@@ -13,32 +11,50 @@ type Panel = {
   title: string;
 };
 
+const demo = {
+  panels: [
+    {
+      title: "Color properties",
+      renderer: 2,
+      labels: "$.demo.name",
+      queries: [
+        {
+          points: "$.demo.luminance",
+          name: "Luminance",
+        },
+        {
+          points: "$.demo.hue",
+          name: "Hue",
+        },
+      ],
+    },
+  ],
+  sources: {
+    demo: "https://gydo.herokuapp.com/api/demo/data",
+  },
+  title: "Demo dashboard",
+};
+
 @Component
 export default class App extends Vue {
   expression: string = "";
+  demo: string = JSON.stringify(demo, null, 2);
+  rendering: Rendering | null = null;
   script: string = "";
   scriptUrls: string[] = [];
-  panels: Panel[] = [];
-  title: string = "";
+  panels: Panel[] | null = null;
 
-  public async graphRender() {
-    const dashboard = JSON.parse(this.expression);
-    const response = await fetch("/api/graph/render", {
-      method: "POST",
-      headers: {
-        Accept: "application/json",
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(dashboard),
-    });
+  @Watch("rendering")
+  public onRenderingChange() {
+    if (this.rendering === null) {
+      return;
+    }
 
     const panels = [];
-    const json = await response.json();
-    const result = json as Rendering;
     const scripts = [];
 
-    if (result.panels !== undefined) {
-      for (const panel of result.panels) {
+    if (this.rendering.panels !== undefined) {
+      for (const panel of this.rendering.panels) {
         const id = "panel-" + Math.random();
 
         if (panel.resources !== undefined) {
@@ -65,25 +81,42 @@ export default class App extends Vue {
           title: panel.title,
         });
       }
+
+      this.panels = panels;
+      this.script = scripts.join("");
+    } else {
+      this.panels = null;
+      this.script = "";
     }
+  }
 
-    this.panels = panels;
-    this.script = scripts.join("");
-    this.title = result.title;
+  public async onRender() {
+    if (this.expression === "") {
+      this.rendering = null;
+    } else {
+      try {
+        const dashboard = JSON.parse(this.expression);
+        const json = await fetchJson(`${apiBase}${graphRender}`, dashboard);
 
-    location.hash = escape(JSON.stringify(dashboard));
+        location.hash = escape(JSON.stringify(dashboard));
+
+        this.expression = JSON.stringify(dashboard, null, 2);
+        this.rendering = json as Rendering;
+      } catch (e) {
+        this.rendering = {
+          errors: [e],
+          panels: [],
+          title: "Rendering error",
+        };
+      }
+    }
   }
 
   async mounted() {
     const hash = new URL(location.href).hash;
-    const expression = unescape((hash ?? "").slice(1));
 
-    try {
-      this.expression = JSON.stringify(JSON.parse(expression), null, 2);
-      this.graphRender();
-    } catch {
-      console.log("FIXME: invalid JSON");
-    }
+    this.expression = unescape((hash ?? "").slice(1));
+    this.onRender();
   }
 
   async updated() {

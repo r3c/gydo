@@ -1,20 +1,20 @@
 export type Dashboard = {
-  panels: Panel[];
-  sources: SourceMap;
-  title: string;
+  panels?: Panel[];
+  sources?: SourceMap;
+  title?: string;
 };
 
 export type Panel = {
-  labels: string;
+  labels?: string;
   language?: QueryLanguage;
-  queries: Query[];
-  renderer: RenderEngine;
-  title: string;
+  queries?: Query[];
+  renderer?: RenderEngine;
+  title?: string;
 };
 
 export type Query = {
   name?: string;
-  points: string;
+  points?: string;
 };
 
 export enum QueryLanguage {

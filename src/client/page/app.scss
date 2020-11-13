@@ -1,16 +1,53 @@
 body {
-	background: white;
+	padding: 8px 32px;
+	background: #280845;
+	color: #0C0017;
+	font: normal normal normal 12px Helvetica;
 }
 
-textarea {
-	width: 100%;
+h1 {
+	margin: 8px 0 16px 0;
+	color: #8668A0;
+	font-size: 250%;
+}
+
+h2 {
+	margin: 8px 0 8px 0;
+	color: #D5CCDE;
+	font-size: 150%;
 }
 
 .dashboard {
-	display: flex;
+	padding: 8px;
+	margin: 8px 0;
+	background: #8668A0;
+	border-radius: 8px;
 
-	.panel {
-		flex: 1;
-		min-width: 640;
+  .panels {
+		display: flex;
+		flex-wrap: wrap;
+
+    .panel {
+			padding: 8px;
+			margin: 8px;
+			background: #D5CCDE;
+      flex: 1;
+			min-width: 480px;
+			min-height: 320px;
+    }
+  }
+}
+
+.form {
+	padding: 8px;
+	margin: 8px 0;
+	background: #8668A0;
+	border-radius: 8px;
+
+	textarea {
+		min-height: 300px;
+		width: 100%;
+		background: #D5CCDE;
+		font: normal normal normal 12px "Courier New";
 	}
 }
