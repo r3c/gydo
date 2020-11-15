@@ -11,14 +11,14 @@ const router = Router();
 
 router.use(express.json());
 
-app.use(apiBase, router);
-app.use(staticBase, express.static(path.join(__dirname, "static")));
+app.use(`${apiBase}`, router);
+app.use(`${staticBase}`, express.static(path.join(__dirname, "../client")));
 
 registerDemo(router);
 registerGraph(router);
 
 const server = app.listen(port, "0.0.0.0", () => {
-  const { port, address } = server.address() as AddressInfo;
+  const { port } = server.address() as AddressInfo;
 
-  console.log("Server listening on:", "http://" + address + ":" + port);
+  console.log("Server listening on:", "http://localhost:" + port);
 });

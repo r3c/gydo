@@ -158,7 +158,7 @@ const renderPanel = (
 };
 
 export const register = (router: Router) => {
-  router.post(graphRender, async (request, response) => {
+  router.post(`${graphRender}`, async (request, response) => {
     try {
       const rendering = await renderDashboard(request.body);
 

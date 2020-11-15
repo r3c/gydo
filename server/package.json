@@ -1,0 +1,24 @@
+{
+  "name": "gydo-server",
+  "version": "1.0.0",
+  "description": "Graph Your Data Online",
+  "scripts": {
+    "build": "tsc --outDir ../dist/server && cp package.json ../dist/server && cd ../dist/server && npm install --only=production",
+    "start": "node ../dist/server/index.js",
+    "watch": "ts-node-dev --respawn --transpile-only index.ts"
+  },
+  "author": "Remi Caput",
+  "license": "MIT",
+  "dependencies": {
+    "express": "^4.17.1",
+    "jsonata": "^1.8.4",
+    "node-fetch": "^2.6.1"
+  },
+  "devDependencies": {
+    "@types/express": "^4.17.8",
+    "@types/node-fetch": "^2.5.7",
+    "node-sass": "^5.0.0",
+    "ts-node-dev": "^1.0.0",
+    "typescript": "^4.0.5"
+  }
+}

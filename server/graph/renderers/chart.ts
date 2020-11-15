@@ -1,4 +1,4 @@
-import { PanelRendering, ResourceType, Serie } from "../response";
+import { PanelRendering, Serie } from "../response";
 
 export const renderLineChart = (
   labels: string[],
@@ -20,12 +20,6 @@ export const renderLineChart = (
 
   return {
     contents: `<canvas></canvas>`,
-    resources: [
-      {
-        type: ResourceType.Javascript,
-        url: "https://cdn.jsdelivr.net/npm/chart.js@2.9.4",
-      },
-    ],
     script: `
 var elements = panel.getElementsByTagName('canvas');
 var context = elements[0].getContext('2d');

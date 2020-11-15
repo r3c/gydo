@@ -30,7 +30,15 @@ body {
   margin: 0;
   background: $page-back;
   color: $page-text;
-  font: normal normal normal 12px Helvetica;
+  font: normal normal normal 12px "Segoe UI", "Roboto", "Oxygen", "Ubuntu",
+    "Cantarell", "Fira Sans", "Droid Sans", "Helvetica Neue", sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+code {
+  font-family: source-code-pro, Menlo, Monaco, Consolas, "Courier New",
+    monospace;
 }
 
 h1 {
