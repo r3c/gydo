@@ -9,5 +9,8 @@
     "preserveConstEnums": true,
     "removeComments": true,
     "sourceMap": true
-  }
+  },
+  "files": [
+    "src/index.ts"
+  ]
 }

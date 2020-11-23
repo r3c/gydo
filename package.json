@@ -8,7 +8,7 @@
     "build:client": "cd client && npm run build && cd .. && copyfiles -u 2 'client/build/**/*' dist/client",
     "build:server": "cd server && npm run build",
     "install": "npm run install:client && npm run install:server",
-    "install:client": "symlink-dir server client/src/server && cd client && npm install",
+    "install:client": "symlink-dir server/src client/src/server && cd client && npm install",
     "install:server": "cd server && npm install",
     "start": "npm run start:server",
     "start:server": "cd server && npm run start",
