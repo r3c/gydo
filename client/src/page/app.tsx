@@ -123,11 +123,15 @@ function App() {
         </div>
       ) : (
         <div className="container">
-          <input
-            type="button"
-            onClick={() => setExpression(formatExpression(demo))}
-            value="Load demo dashboard"
-          />
+          <div className="form">
+            <div className="field">
+              <input
+                type="button"
+                onClick={() => setExpression(formatExpression(demo))}
+                value="Load demo dashboard"
+              />
+            </div>
+          </div>
         </div>
       )}
       <div className="container form">

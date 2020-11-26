@@ -66,7 +66,7 @@ const renderDashboard = async (dashboard: Dashboard): Promise<Rendering> => {
 
   return {
     panels: panels.map((panel, index) => ({
-      ...renderPanel(panel, data),
+      ...renderPanel(panel, data, index),
       title: panel.title ?? `Panel #${index + 1}`,
     })),
     title: dashboard.title ?? "Untitled dashboard",
@@ -75,7 +75,8 @@ const renderDashboard = async (dashboard: Dashboard): Promise<Rendering> => {
 
 const renderPanel = (
   panel: Panel,
-  data: any
+  data: any,
+  shift: number
 ): Omit<PanelRendering, "title"> => {
   const errors: string[] = [];
   const language = panel.language ?? QueryLanguage.Jsonata;
@@ -141,7 +142,7 @@ const renderPanel = (
   if (errors.length === 0) {
     switch (panel.renderer ?? RenderEngine.Debug) {
       case RenderEngine.LineChart:
-        return renderLineChart(labels, series);
+        return renderLineChart(labels, series, shift);
 
       case RenderEngine.Debug:
         return renderDebug(labels, series);

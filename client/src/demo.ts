@@ -15,6 +15,17 @@ export const demo = {
         },
       ],
     },
+    {
+      title: "Number of characters",
+      renderer: 2,
+      labels: "$.demo.name",
+      queries: [
+        {
+          points: "$.demo.($length(name))",
+          name: "Length",
+        },
+      ],
+    },
   ],
   sources: {
     demo: "https://gydo.herokuapp.com/api/demo/data",

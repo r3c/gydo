@@ -1,11 +1,11 @@
-$container-back: #8668a0;
-$container-text: #d5ccde;
+$container-back: #7f70ac;
+$container-text: #e2dcf6;
 
-$overlay-back: #d5ccde;
-$overlay-text: black;
+$page-back: #403075;
+$page-text: #e2dcf6;
 
-$page-back: #280845;
-$page-text: #8668a0;
+$primary-back: #e2dcf6;
+$primary-text: #170a3e;
 
 @mixin background-bump($color, $lradius, $rradius) {
   background: $color;
@@ -43,7 +43,8 @@ code {
 
 h1 {
   margin: 0 0 32px 0;
-  font-size: 250%;
+  font-size: 300%;
+  font-variant: small-caps;
 }
 
 .container {
@@ -76,8 +77,9 @@ h1 {
       min-width: 480px;
       min-height: 320px;
       padding: 8px;
-      color: $overlay-text;
-      @include background-bump($overlay-back, 8px, 8px);
+      margin: 4px;
+      color: $primary-text;
+      @include background-bump($primary-back, 8px, 8px);
     }
   }
 }
@@ -88,12 +90,12 @@ h1 {
 
     input[type="button"] {
       padding: 4px 8px;
-      color: $overlay-text;
-      @include background-bump($overlay-back, 8px, 8px);
+      color: $primary-text;
+      @include background-bump($primary-back, 8px, 8px);
 
       &:active {
         padding: 5px 7px 3px 9px;
-        @include background-dip($overlay-back, 8px, 8px);
+        @include background-dip($primary-back, 8px, 8px);
       }
     }
 
@@ -101,8 +103,8 @@ h1 {
       min-height: 300px;
       width: 100%;
       padding: 4px;
-      color: $overlay-text;
-      @include background-dip($overlay-back, 8px, 0);
+      color: $primary-text;
+      @include background-dip($primary-back, 8px, 0);
       font: normal normal normal 12px "Courier New";
     }
   }
