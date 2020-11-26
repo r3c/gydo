@@ -20,6 +20,8 @@ const formatExpression = (
     : JSON.stringify(dashboard, null, 2);
 };
 
+const getPanelId = (index: number) => `panel${index}`;
+
 const loadExpression = () => {
   const href = new URL(window.location.href);
   const hash = unescape(href.hash.slice(1));
@@ -67,6 +69,22 @@ function App() {
     render(dashboard).then(setRendering);
   }, [dashboard]);
 
+  useEffect(() => {
+    rendering?.panels?.forEach((panel, index) => {
+      const id = getPanelId(index);
+      const script = panel.script;
+
+      // eslint-disable-next-line no-implied-eval
+      setTimeout(
+        `(function() { var panel = document.getElementById('${id}'); ${script} })();`,
+        0
+      );
+    });
+  }, [rendering]);
+
+  const errors = rendering?.errors;
+  const panels = rendering?.panels;
+
   return (
     <>
       <h1>Graph Your Data Online</h1>
@@ -74,10 +92,10 @@ function App() {
         <div className="container">
           <h2>{rendering.title}</h2>
           <div className="tiles">
-            {rendering.errors && (
+            {errors && (
               <div v-if="rendering.errors" className="tile">
                 <ul className="errors">
-                  {rendering.errors.map((error: any) => (
+                  {errors.map((error: any) => (
                     <li v-for="error of rendering.errors" className="error">
                       {error}
                     </li>
@@ -85,32 +103,22 @@ function App() {
                 </ul>
               </div>
             )}
-            {rendering.panels &&
-              rendering.panels.map((panel, index) => {
-                const panelId = `panel${index}`;
-
-                // eslint-disable-next-line no-implied-eval
-                setTimeout(
-                  `(function() { var panel = document.getElementById('${panelId}'); ${panel.script} })();`,
-                  0
-                );
-
-                return (
-                  <div key={index} className="tile">
-                    <h3>{panel.title}</h3>
-                    {panel.errors &&
-                      panel.errors.map((error: any) => (
-                        <div className="error">{error}</div>
-                      ))}
-                    {panel.contents && (
-                      <div
-                        id={panelId}
-                        dangerouslySetInnerHTML={{ __html: panel.contents }}
-                      ></div>
-                    )}
-                  </div>
-                );
-              })}
+            {panels &&
+              panels.map((panel, index) => (
+                <div key={index} className="tile">
+                  <h3>{panel.title}</h3>
+                  {panel.errors &&
+                    panel.errors.map((error: any) => (
+                      <div className="error">{error}</div>
+                    ))}
+                  {panel.contents && (
+                    <div
+                      id={getPanelId(index)}
+                      dangerouslySetInnerHTML={{ __html: panel.contents }}
+                    ></div>
+                  )}
+                </div>
+              ))}
           </div>
         </div>
       ) : (
