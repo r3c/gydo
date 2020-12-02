@@ -1,10 +1,8 @@
-import { Dashboard, Panel, QueryLanguage, RenderEngine } from "./request";
-import { Rendering, PanelRendering, Serie } from "./response";
+import { ServerDashboard, ServerPanel, ServerQueryLanguage } from "./request";
+import { RenderDashboard, RenderEntity, RenderSerie } from "./response";
 import { Router } from "express";
 import fetch, { Response } from "node-fetch";
 import { evaluateJsonata } from "./evaluators/jsonata";
-import { renderLineChart } from "./renderers/chart";
-import { renderDebug } from "./renderers/debug";
 import { graphRender } from "./route";
 
 const fetchAsJson = async (response: Response): Promise<any> => {
@@ -12,12 +10,12 @@ const fetchAsJson = async (response: Response): Promise<any> => {
 };
 
 const evaluate = (
-  language: QueryLanguage,
+  language: ServerQueryLanguage,
   expression: string,
   data: any
-): Omit<Serie, "name"> => {
+): RenderSerie => {
   switch (language) {
-    case QueryLanguage.Jsonata:
+    case ServerQueryLanguage.Jsonata:
       return evaluateJsonata(expression, data);
 
     default:
@@ -27,7 +25,9 @@ const evaluate = (
   }
 };
 
-const renderDashboard = async (dashboard: Dashboard): Promise<Rendering> => {
+const renderDashboard = async (
+  dashboard: ServerDashboard
+): Promise<RenderDashboard> => {
   const data: { [key: string]: any } = {};
 
   // Fetch data from sources
@@ -37,8 +37,6 @@ const renderDashboard = async (dashboard: Dashboard): Promise<Rendering> => {
     if (!source) {
       return {
         errors: [`missing source ${key}`],
-        panels: [],
-        title: "",
       };
     }
 
@@ -55,8 +53,6 @@ const renderDashboard = async (dashboard: Dashboard): Promise<Rendering> => {
       default:
         return {
           errors: [`cannot fetch source ${key}: media ${type} not supported`],
-          panels: [],
-          title: "",
         };
     }
   }
@@ -65,21 +61,13 @@ const renderDashboard = async (dashboard: Dashboard): Promise<Rendering> => {
   const panels = dashboard.panels ?? [];
 
   return {
-    panels: panels.map((panel, index) => ({
-      ...renderPanel(panel, data, index),
-      title: panel.title ?? `Panel #${index + 1}`,
-    })),
-    title: dashboard.title ?? "Untitled dashboard",
+    entities: panels.map((panel) => renderEntity(panel, data)),
   };
 };
 
-const renderPanel = (
-  panel: Panel,
-  data: any,
-  shift: number
-): Omit<PanelRendering, "title"> => {
+const renderEntity = (panel: ServerPanel, data: any): RenderEntity => {
   const errors: string[] = [];
-  const language = panel.language ?? QueryLanguage.Jsonata;
+  const language = panel.language ?? ServerQueryLanguage.Jsonata;
 
   // Render series from queries
   const series = [];
@@ -139,23 +127,7 @@ const renderPanel = (
   }
 
   // Render panel
-  if (errors.length === 0) {
-    switch (panel.renderer ?? RenderEngine.Debug) {
-      case RenderEngine.LineChart:
-        return renderLineChart(labels, series, shift);
-
-      case RenderEngine.Debug:
-        return renderDebug(labels, series);
-
-      default:
-        errors.push(`unknown rendering engine "${panel.renderer}"`);
-
-        break;
-    }
-  }
-
-  // Failure
-  return { errors };
+  return { errors, labels, series };
 };
 
 export const register = (router: Router) => {

@@ -2,13 +2,14 @@ import React, { useEffect, useState } from "react";
 import { demo } from "../demo";
 import { useScript } from "../dom/hook";
 import { fetchJson } from "../network/http";
-import { Dashboard } from "../server/graph/request";
-import { Rendering } from "../server/graph/response";
+import { ClientDashboard, ClientRenderEngine } from "../media/component";
+import { RenderDashboard } from "../server/graph/response";
 import { graphRender } from "../server/graph/route";
 import { apiBase } from "../server/route";
+import Media from "../media/media";
 
 const formatExpression = (
-  dashboard: Dashboard | undefined,
+  dashboard: ClientDashboard | undefined,
   compact: boolean = false
 ) => {
   if (dashboard === undefined) {
@@ -20,8 +21,6 @@ const formatExpression = (
     : JSON.stringify(dashboard, null, 2);
 };
 
-const getPanelId = (index: number) => `panel${index}`;
-
 const loadExpression = () => {
   const href = new URL(window.location.href);
   const hash = unescape(href.hash.slice(1));
@@ -31,25 +30,21 @@ const loadExpression = () => {
 
 const parseExpression = (expression: string) => {
   try {
-    return JSON.parse(expression) as Dashboard;
+    return JSON.parse(expression) as ClientDashboard;
   } catch (e) {
     return undefined;
   }
 };
 
-const render = async (dashboard: Dashboard | undefined) => {
+const render = async (dashboard: ClientDashboard | undefined) => {
   if (dashboard === undefined) {
     return undefined;
   }
 
   const json = await fetchJson(`${apiBase}${graphRender}`, dashboard);
-  const output = json as Rendering;
+  const output = json as RenderDashboard;
 
-  if (
-    output.errors === undefined &&
-    output.panels === undefined &&
-    output.title === undefined
-  ) {
+  if (output.entities === undefined && output.errors === undefined) {
     return undefined;
   }
 
@@ -58,67 +53,47 @@ const render = async (dashboard: Dashboard | undefined) => {
   return output;
 };
 
-function App() {
+export default function App() {
   useScript("https://cdn.jsdelivr.net/npm/chart.js@2.9.4");
 
   const [expression, setExpression] = useState(loadExpression);
   const [dashboard, setDashboard] = useState(parseExpression(expression));
-  const [rendering, setRendering] = useState<Rendering>();
+  const [rendering, setRendering] = useState<RenderDashboard>();
 
   useEffect(() => {
     render(dashboard).then(setRendering);
   }, [dashboard]);
 
-  useEffect(() => {
-    rendering?.panels?.forEach((panel, index) => {
-      const id = getPanelId(index);
-      const script = panel.script;
-
-      // eslint-disable-next-line no-implied-eval
-      setTimeout(
-        `(function() { var panel = document.getElementById('${id}'); ${script} })();`,
-        0
-      );
-    });
-  }, [rendering]);
-
-  const errors = rendering?.errors;
-  const panels = rendering?.panels;
+  const entities = rendering?.entities ?? [];
+  const errors = rendering?.errors ?? [];
+  const panels = dashboard?.panels ?? [];
 
   return (
     <>
       <h1>Graph Your Data Online</h1>
-      {rendering ? (
+      {dashboard && rendering ? (
         <div className="container">
-          <h2>{rendering.title}</h2>
+          <h2>{dashboard.title}</h2>
           <div className="tiles">
-            {errors && (
-              <div v-if="rendering.errors" className="tile">
+            {errors.length > 0 && (
+              <div className="tile">
                 <ul className="errors">
                   {errors.map((error: any) => (
-                    <li v-for="error of rendering.errors" className="error">
-                      {error}
-                    </li>
+                    <li className="error">{error}</li>
                   ))}
                 </ul>
               </div>
             )}
-            {panels &&
-              panels.map((panel, index) => (
-                <div key={index} className="tile">
-                  <h3>{panel.title}</h3>
-                  {panel.errors &&
-                    panel.errors.map((error: any) => (
-                      <div className="error">{error}</div>
-                    ))}
-                  {panel.contents && (
-                    <div
-                      id={getPanelId(index)}
-                      dangerouslySetInnerHTML={{ __html: panel.contents }}
-                    ></div>
-                  )}
-                </div>
-              ))}
+            {entities.map((entity, index) => (
+              <div key={index} className="tile">
+                <h3>{panels[index]?.title ?? "Unknown"}</h3>
+                <Media
+                  engine={panels[index]?.engine ?? ClientRenderEngine.Debug}
+                  entity={entity}
+                  shift={index}
+                />
+              </div>
+            ))}
           </div>
         </div>
       ) : (
@@ -158,5 +133,3 @@ function App() {
     </>
   );
 }
-
-export default App;

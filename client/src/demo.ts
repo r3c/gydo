@@ -1,8 +1,10 @@
-export const demo = {
+import { ClientDashboard, ClientRenderEngine } from "./media/component";
+
+export const demo: ClientDashboard = {
   panels: [
     {
       title: "Color properties",
-      renderer: 2,
+      engine: ClientRenderEngine.LineChart,
       labels: "$.demo.name",
       queries: [
         {
@@ -17,7 +19,7 @@ export const demo = {
     },
     {
       title: "Number of characters",
-      renderer: 2,
+      engine: ClientRenderEngine.LineChart,
       labels: "$.demo.name",
       queries: [
         {

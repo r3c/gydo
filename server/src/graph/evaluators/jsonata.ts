@@ -1,10 +1,7 @@
 import jsonata from "jsonata";
-import { Serie } from "../response";
+import { RenderSerie } from "../response";
 
-export const evaluateJsonata = (
-  expression: string,
-  data: any
-): Omit<Serie, "name"> => {
+export const evaluateJsonata = (expression: string, data: any): RenderSerie => {
   try {
     const evaluator = jsonata(expression);
     const points = evaluator.evaluate(data);

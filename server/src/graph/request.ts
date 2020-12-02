@@ -1,36 +1,27 @@
-export type Dashboard = {
-  panels?: Panel[];
-  sources?: SourceMap;
-  title?: string;
+export type ServerDashboard = {
+  panels?: ServerPanel[];
+  sources?: ServerSourceMap;
 };
 
-export type Panel = {
+export type ServerPanel = {
   labels?: string;
-  language?: QueryLanguage;
-  queries?: Query[];
-  renderer?: RenderEngine;
-  title?: string;
+  language?: ServerQueryLanguage;
+  queries?: ServerQuery[];
 };
 
-export type Query = {
+export type ServerQuery = {
   name?: string;
   points?: string;
 };
 
-export enum QueryLanguage {
+export enum ServerQueryLanguage {
   Jsonata,
 }
 
-export enum RenderEngine {
-  Debug,
-  Table,
-  LineChart,
-}
-
-export type SourceMap = {
+export type ServerSourceMap = {
   [key: string]: string;
 };
 
-export enum SourceType {
+export enum ServerSourceType {
   Json,
 }

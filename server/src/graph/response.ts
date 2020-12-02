@@ -1,17 +1,15 @@
-export type PanelRendering = {
-  contents?: string;
+export type RenderDashboard = {
+  entities?: RenderEntity[];
   errors?: string[];
-  script?: string;
-  title?: string;
 };
 
-export type Rendering = {
+export type RenderEntity = {
   errors?: string[];
-  panels?: PanelRendering[];
-  title?: string;
+  labels?: string[];
+  series?: RenderSerie[];
 };
 
-export type Serie = {
+export type RenderSerie = {
   errors?: string[];
   name?: string;
   points?: any[];
