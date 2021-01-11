@@ -1,36 +1,29 @@
-import { ClientDashboard, ClientRenderEngine } from "./media/component";
+import { ClientRenderEngine } from "./media/component";
 
-export const demo: ClientDashboard = {
+export const demo = {
   panels: [
     {
       title: "Color properties",
       engine: ClientRenderEngine.LineChart,
-      labels: "$.demo.name",
-      queries: [
-        {
-          points: "$.demo.luminance",
-          name: "Luminance",
-        },
-        {
-          points: "$.demo.hue",
-          name: "Hue",
-        },
+      labels: "name",
+      series: [
+        ["luminance", "Luminance"],
+        ["hue", "Hue"],
       ],
     },
     {
       title: "Number of characters",
       engine: ClientRenderEngine.LineChart,
-      labels: "$.demo.name",
-      queries: [
-        {
-          points: "$.demo.($length(name))",
-          name: "Length",
-        },
-      ],
+      labels: "name",
+      series: [["length", "Length"]],
     },
   ],
-  sources: {
-    demo: "https://gydo.herokuapp.com/api/demo/data",
-  },
+  queries: [
+    ["demo", "https://gydo.herokuapp.com/api/demo/data"],
+    ["name", "$.demo.name"],
+    ["luminance", "$.demo.luminance"],
+    ["hue", "$.demo.hue"],
+    ["length", "$.demo.($length(name))"],
+  ],
   title: "Demo dashboard",
 };

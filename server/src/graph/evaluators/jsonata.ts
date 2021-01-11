@@ -1,17 +1,22 @@
 import jsonata from "jsonata";
-import { RenderSerie } from "../response";
+import { RenderQuery, RenderState } from "../response";
 
-export const evaluateJsonata = (expression: string, data: any): RenderSerie => {
+export async function evaluateFromJsonata(
+  expression: string,
+  state: RenderState
+): Promise<RenderQuery> {
   try {
     const evaluator = jsonata(expression);
-    const points = evaluator.evaluate(data);
+    const value = evaluator.evaluate(state);
 
     return {
-      points,
+      errors: [],
+      value,
     };
   } catch (error) {
     return {
       errors: [`${error.message} at character ${error.position}`],
+      value: undefined,
     };
   }
-};
+}

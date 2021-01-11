@@ -24,23 +24,22 @@ const formatExpression = (
 const loadExpression = () => {
   const href = new URL(window.location.href);
   const hash = unescape(href.hash.slice(1));
+  const dashboard = parseExpression(hash);
 
-  return formatExpression(parseExpression(hash));
+  return dashboard.errors === undefined || dashboard.errors.length === 0
+    ? formatExpression(dashboard)
+    : "";
 };
 
-const parseExpression = (expression: string) => {
+const parseExpression = (expression: string): ClientDashboard => {
   try {
     return JSON.parse(expression) as ClientDashboard;
   } catch (e) {
-    return undefined;
+    return { errors: [`could not parse expression: ${e}`] };
   }
 };
 
-const render = async (dashboard: ClientDashboard | undefined) => {
-  if (dashboard === undefined) {
-    return undefined;
-  }
-
+const render = async (dashboard: ClientDashboard) => {
   const json = await fetchJson(`${apiBase}${graphRender}`, dashboard);
   const output = json as RenderDashboard;
 
@@ -57,7 +56,7 @@ export default function App() {
   useScript("https://cdn.jsdelivr.net/npm/chart.js@2.9.4");
 
   const [expression, setExpression] = useState(loadExpression);
-  const [dashboard, setDashboard] = useState(parseExpression(expression));
+  const [dashboard, setDashboard] = useState(() => parseExpression(expression));
   const [rendering, setRendering] = useState<RenderDashboard>();
 
   useEffect(() => {
@@ -65,15 +64,15 @@ export default function App() {
   }, [dashboard]);
 
   const entities = rendering?.entities ?? [];
-  const errors = rendering?.errors ?? [];
-  const panels = dashboard?.panels ?? [];
+  const errors = [...(dashboard.errors ?? []), ...(rendering?.errors ?? [])];
+  const panels = dashboard.panels ?? [];
 
   return (
     <>
       <h1>Graph Your Data Online</h1>
-      {dashboard && rendering ? (
+      {entities.length > 0 || errors.length > 0 ? (
         <div className="container">
-          <h2>{dashboard.title}</h2>
+          <h2>{dashboard.title ?? "Untitled dashboard"}</h2>
           <div className="tiles">
             {errors.length > 0 && (
               <div className="tile">
@@ -114,11 +113,6 @@ export default function App() {
         <div className="field">
           <textarea
             value={expression}
-            onBlur={() =>
-              setExpression(
-                formatExpression(parseExpression(expression)) || expression
-              )
-            }
             onChange={(event) => setExpression(event.target.value)}
           />
         </div>

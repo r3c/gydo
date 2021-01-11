@@ -1,12 +1,14 @@
-import { ServerDashboard, ServerPanel } from "../server/graph/request";
 import { RenderEntity } from "../server/graph/response";
 
-export type ClientDashboard = Omit<ServerDashboard, "panels"> & {
+export type ClientDashboard = {
+  errors?: string[];
   panels?: ClientPanel[];
   title?: string;
 };
 
-export type ClientPanel = ServerPanel & {
+export type ClientPanel = {
+  labels: unknown;
+  series: unknown;
   engine?: ClientRenderEngine;
   title?: string;
 };

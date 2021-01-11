@@ -1,133 +1,206 @@
-import { ServerDashboard, ServerPanel, ServerQueryLanguage } from "./request";
-import { RenderDashboard, RenderEntity, RenderSerie } from "./response";
+import {
+  RenderDashboard,
+  RenderEntity,
+  RenderQuery,
+  RenderSerie,
+  RenderState,
+} from "./response";
 import { Router } from "express";
-import fetch, { Response } from "node-fetch";
-import { evaluateJsonata } from "./evaluators/jsonata";
+import { evaluateFromHttp } from "./evaluators/http";
+import { evaluateFromJsonata } from "./evaluators/jsonata";
 import { graphRender } from "./route";
+import { asArray, asObject, asString } from "../dynamic/type";
 
-const fetchAsJson = async (response: Response): Promise<any> => {
-  return await response.json();
+type Evaluator = {
+  evaluate: (source: string, state: RenderState) => Promise<RenderQuery>;
+  satisfy: (source: string) => boolean;
 };
 
-const evaluate = (
-  language: ServerQueryLanguage,
-  expression: string,
-  data: any
-): RenderSerie => {
-  switch (language) {
-    case ServerQueryLanguage.Jsonata:
-      return evaluateJsonata(expression, data);
+const evaluators: Evaluator[] = [
+  // Fetch from HTTP or HTTP URL
+  {
+    evaluate: evaluateFromHttp,
+    satisfy: (source: string) => /^https?:\/\//.test(source),
+  },
+  // Evaluate Jsonata expression
+  {
+    evaluate: evaluateFromJsonata,
+    satisfy: (source: string) => /^\$/.test(source),
+  },
+];
 
-    default:
-      return {
-        errors: [`unknown query engine "${language}"`],
-      };
+const renderDashboard = async (input: unknown): Promise<RenderDashboard> => {
+  const dashboard = asObject(input);
+
+  if (dashboard === undefined) {
+    return {
+      entities: [],
+      errors: [`undefined or invalid dashboard`],
+    };
   }
-};
 
-const renderDashboard = async (
-  dashboard: ServerDashboard
-): Promise<RenderDashboard> => {
-  const data: { [key: string]: any } = {};
+  const state: RenderState = {};
 
-  // Fetch data from sources
-  for (const key in dashboard.sources) {
-    const source = dashboard.sources[key] ?? "";
+  // Compute data from queries
+  const queries = asArray(dashboard.queries);
 
-    if (!source) {
+  if (queries === undefined) {
+    return {
+      entities: [],
+      errors: [`undefined or invalid property "queries"`],
+    };
+  }
+
+  for (let i = 0; i < queries.length; ++i) {
+    const query = asArray(queries[i]);
+
+    if (query === undefined) {
       return {
-        errors: [`missing source ${key}`],
+        entities: [],
+        errors: [`undefined or invalid property "queries[${i}]"`],
       };
     }
 
-    const response = await fetch(source);
-    const type = response.headers.get("Content-Type") ?? "";
+    const [key, source] = query.map(asString);
 
-    switch (type.replace(/;.*/, "").toLowerCase()) {
-      case "application/json":
-      case "text/json":
-        data[key] = await fetchAsJson(response);
-
-        break;
-
-      default:
-        return {
-          errors: [`cannot fetch source ${key}: media ${type} not supported`],
-        };
+    if (key === undefined || source === undefined) {
+      return {
+        entities: [],
+        errors: [
+          `undefined or invalid property "queries[${i}][0]" or "queries[${i}][1]"`,
+        ],
+      };
     }
+
+    const evaluator = evaluators.find(({ satisfy }) => satisfy(source));
+
+    if (evaluator === undefined) {
+      return {
+        entities: [],
+        errors: [
+          `cannot evaluate source "${key}": unrecognized expression "${source}"`,
+        ],
+      };
+    }
+
+    const { evaluate } = evaluator;
+    const result = await evaluate(source, state);
+
+    if (result.errors.length > 0) {
+      return {
+        entities: [],
+        errors: result.errors.map(
+          (error) => `cannot evaluate source "${key}": ${error}`
+        ),
+      };
+    }
+
+    state[key] = result.value;
   }
 
   // Render panels
-  const panels = dashboard.panels ?? [];
+  const panels = asArray(dashboard.panels);
+
+  if (panels === undefined) {
+    return {
+      entities: [],
+      errors: ['undefined or invalid property "panels"'],
+    };
+  }
 
   return {
-    entities: panels.map((panel) => renderEntity(panel, data)),
+    entities: panels.map((panel) => renderEntity(panel, state)),
+    errors: [],
   };
 };
 
-const renderEntity = (panel: ServerPanel, data: any): RenderEntity => {
-  const errors: string[] = [];
-  const language = panel.language ?? ServerQueryLanguage.Jsonata;
+const renderEntity = (input: unknown, state: RenderState): RenderEntity => {
+  const panel = asObject(input);
 
-  // Render series from queries
-  const series = [];
-
-  if (panel.queries === undefined) {
-    errors.push(`panel property "queries" is undefined`);
-  } else {
-    for (let i = 0; i < panel.queries.length; ++i) {
-      const query = panel.queries[i];
-
-      if (query === undefined || query.points === undefined) {
-        continue;
-      }
-
-      const querySerie = evaluate(language, query.points, data);
-      const name = query.name ?? `Serie #${i}`;
-
-      if (querySerie.errors !== undefined) {
-        errors.concat(
-          querySerie.errors.map(
-            (error) => `query ${name} evaluation failed: ${error}`
-          )
-        );
-      } else if (querySerie.points === undefined) {
-        errors.push(`query ${name} evaluation didn't return values`);
-      } else {
-        series.push({
-          name: query.name ?? `Serie #${i}`,
-          points: querySerie.points,
-        });
-      }
-    }
+  if (panel === undefined) {
+    return {
+      errors: ["undefined or invalid panel"],
+      labels: [],
+      series: [],
+    };
   }
 
-  // Render labels
-  var labels;
+  const errors: string[] = [];
 
-  if (panel.labels === undefined) {
+  // Render series from queries
+  const panelSeries = asArray(panel.series);
+
+  if (panelSeries === undefined) {
+    return {
+      errors: ['undefined or invalid property "series"'],
+      labels: [],
+      series: [],
+    };
+  }
+
+  const series = panelSeries.map((serie) => renderSerie(serie, state));
+
+  // Render labels
+  const labelKey = asString(panel.labels);
+  let labels;
+
+  if (labelKey === undefined) {
     labels =
       series.length > 0
-        ? Array.from(Array(series[0].points.length).keys())
+        ? Array.from(Array(series[0].points!.length).keys()).map(String)
         : [];
   } else {
-    const labelSerie = evaluate(language, panel.labels, data);
+    const labelValues = asArray(state[labelKey]);
 
-    if (labelSerie.errors !== undefined) {
-      errors.concat(
-        labelSerie.errors.map((error) => `labels evaluation failed: ${error}`)
-      );
-      labels = [];
-    } else if (labelSerie.points === undefined) {
-      errors.concat("labels evaluation didn't return values");
-      labels = [];
-    } else {
-      labels = labelSerie.points;
+    if (labelValues === undefined) {
+      return {
+        errors: [...errors, `unknown key "${labelKey}" used in "labels"`],
+        labels: [],
+        series: [],
+      };
     }
+
+    labels = labelValues.map(String);
   }
 
   // Render panel
   return { errors, labels, series };
+};
+
+const renderSerie = (serie: unknown, state: RenderState): RenderSerie => {
+  const serieArray = asArray(serie);
+  const serieKey = asString(serie);
+
+  const [key, name] =
+    serieArray !== undefined
+      ? serieArray.map(asString)
+      : serieKey !== undefined
+      ? [serieKey, undefined]
+      : [undefined, undefined];
+
+  if (key === undefined) {
+    return {
+      errors: ["serie key is undefined"],
+      name: "",
+      points: [],
+    };
+  }
+
+  const points = asArray(state[key]);
+
+  if (points === undefined) {
+    return {
+      errors: [`query "${key}" is undefined`],
+      name: "",
+      points: [],
+    };
+  }
+
+  return {
+    errors: [],
+    name: name ?? key,
+    points: points.map(Number),
+  };
 };
 
 export const register = (router: Router) => {
