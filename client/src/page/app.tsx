@@ -8,30 +8,26 @@ import { graphRender } from "../server/graph/route";
 import { apiBase } from "../server/route";
 import Media from "../media/media";
 
-const formatExpression = (
-  dashboard: ClientDashboard | undefined,
-  compact: boolean = false
-) => {
-  if (dashboard === undefined) {
-    return "";
-  }
+type Dashboard = ClientDashboard & RenderDashboard;
 
+const format = (dashboard: ClientDashboard, compact: boolean) => {
   return compact
     ? JSON.stringify(dashboard)
     : JSON.stringify(dashboard, null, 2);
 };
 
-const loadExpression = () => {
+const load = () => {
   const href = new URL(window.location.href);
   const hash = unescape(href.hash.slice(1));
-  const dashboard = parseExpression(hash);
 
-  return dashboard.errors === undefined || dashboard.errors.length === 0
-    ? formatExpression(dashboard)
-    : "";
+  return hash;
 };
 
-const parseExpression = (expression: string): ClientDashboard => {
+const parse = (expression: string): ClientDashboard => {
+  if (expression.trim() === "") {
+    return {};
+  }
+
   try {
     return JSON.parse(expression) as ClientDashboard;
   } catch (e) {
@@ -39,40 +35,58 @@ const parseExpression = (expression: string): ClientDashboard => {
   }
 };
 
-const render = async (dashboard: ClientDashboard) => {
-  const json = await fetchJson(`${apiBase}${graphRender}`, dashboard);
-  const output = json as RenderDashboard;
+const render = async (expression: string): Promise<Dashboard | undefined> => {
+  const client = parse(expression);
 
-  if (output.entities === undefined && output.errors === undefined) {
+  if (client.errors !== undefined && client.errors.length > 0) {
+    const errors = client.errors;
+
+    return {
+      entities: [],
+      errors,
+    };
+  }
+
+  if (client.panels === undefined && client.title === undefined) {
     return undefined;
   }
 
-  window.location.hash = escape(formatExpression(dashboard, true));
+  save(client);
 
-  return output;
+  const result = await fetchJson(`${apiBase}${graphRender}`, client);
+  const render = result as RenderDashboard;
+
+  return {
+    ...client,
+    ...render,
+  };
+};
+
+const save = (dashboard: ClientDashboard) => {
+  window.location.hash = escape(format(dashboard, true));
 };
 
 export default function App() {
   useScript("https://cdn.jsdelivr.net/npm/chart.js@2.9.4");
 
-  const [expression, setExpression] = useState(loadExpression);
-  const [dashboard, setDashboard] = useState(() => parseExpression(expression));
-  const [rendering, setRendering] = useState<RenderDashboard>();
+  const [expression, setExpression] = useState(load);
+  const [dashboard, setDashboard] = useState<Dashboard>();
+  const [input, setInput] = useState(() => format(parse(expression), false));
 
   useEffect(() => {
-    render(dashboard).then(setRendering);
-  }, [dashboard]);
+    render(expression).then(setDashboard);
+  }, [expression]);
 
-  const entities = rendering?.entities ?? [];
-  const errors = [...(dashboard.errors ?? []), ...(rendering?.errors ?? [])];
-  const panels = dashboard.panels ?? [];
+  const entities = dashboard?.entities ?? [];
+  const errors = dashboard?.errors ?? [];
+  const panels = dashboard?.panels ?? [];
 
   return (
     <>
       <h1>Graph Your Data Online</h1>
       {entities.length > 0 || errors.length > 0 ? (
         <div className="container">
-          <h2>{dashboard.title ?? "Untitled dashboard"}</h2>
+          <h2>{dashboard?.title ?? "Untitled dashboard"}</h2>
           <div className="tiles">
             {errors.length > 0 && (
               <div className="tile">
@@ -101,7 +115,7 @@ export default function App() {
             <div className="field">
               <input
                 type="button"
-                onClick={() => setExpression(formatExpression(demo))}
+                onClick={() => setExpression(format(demo, false))}
                 value="Load demo dashboard"
               />
             </div>
@@ -112,13 +126,13 @@ export default function App() {
         <h2>Input dashboard</h2>
         <div className="field">
           <textarea
-            value={expression}
-            onChange={(event) => setExpression(event.target.value)}
+            value={input}
+            onChange={(event) => setInput(event.target.value)}
           />
         </div>
         <div className="field">
           <input
-            onClick={() => setDashboard(parseExpression(expression))}
+            onClick={() => setExpression(input)}
             type="button"
             value="Draw"
           />
