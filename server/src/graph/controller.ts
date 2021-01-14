@@ -12,20 +12,20 @@ import { graphRender } from "./route";
 import { asArray, asObject, asString } from "../dynamic/type";
 
 type Evaluator = {
-  evaluate: (source: string, state: RenderState) => Promise<RenderQuery>;
-  satisfy: (source: string) => boolean;
+  evaluate: (expression: string, state: RenderState) => Promise<RenderQuery>;
+  satisfy: (expression: string) => boolean;
 };
 
 const evaluators: Evaluator[] = [
   // Fetch from HTTP or HTTP URL
   {
     evaluate: evaluateFromHttp,
-    satisfy: (source: string) => /^https?:\/\//.test(source),
+    satisfy: (expression: string) => /^https?:\/\//.test(expression),
   },
   // Evaluate Jsonata expression
   {
     evaluate: evaluateFromJsonata,
-    satisfy: (source: string) => /^\$/.test(source),
+    satisfy: (expression: string) => /^\$/.test(expression),
   },
 ];
 
@@ -41,50 +41,50 @@ const renderDashboard = async (input: unknown): Promise<RenderDashboard> => {
 
   const state: RenderState = {};
 
-  // Compute data from queries
-  const queries = asArray(dashboard.queries);
+  // Compute data from sources
+  const sources = asArray(dashboard.sources);
 
-  if (queries === undefined) {
+  if (sources === undefined) {
     return {
       entities: [],
-      errors: [`undefined or invalid property "queries"`],
+      errors: [`undefined or invalid property "sources"`],
     };
   }
 
-  for (let i = 0; i < queries.length; ++i) {
-    const query = asArray(queries[i]);
+  for (let i = 0; i < sources.length; ++i) {
+    const source = asArray(sources[i]);
 
-    if (query === undefined) {
+    if (source === undefined) {
       return {
         entities: [],
-        errors: [`undefined or invalid property "queries[${i}]"`],
+        errors: [`undefined or invalid property "sources[${i}]"`],
       };
     }
 
-    const [key, source] = query.map(asString);
+    const [key, expression] = source.map(asString);
 
-    if (key === undefined || source === undefined) {
+    if (key === undefined || expression === undefined) {
       return {
         entities: [],
         errors: [
-          `undefined or invalid property "queries[${i}][0]" or "queries[${i}][1]"`,
+          `undefined or invalid property "sources[${i}][0]" or "sources[${i}][1]"`,
         ],
       };
     }
 
-    const evaluator = evaluators.find(({ satisfy }) => satisfy(source));
+    const evaluator = evaluators.find(({ satisfy }) => satisfy(expression));
 
     if (evaluator === undefined) {
       return {
         entities: [],
         errors: [
-          `cannot evaluate source "${key}": unrecognized expression "${source}"`,
+          `cannot evaluate source "${key}": unrecognized expression "${expression}"`,
         ],
       };
     }
 
     const { evaluate } = evaluator;
-    const result = await evaluate(source, state);
+    const result = await evaluate(expression, state);
 
     if (result.errors.length > 0) {
       return {
@@ -98,28 +98,28 @@ const renderDashboard = async (input: unknown): Promise<RenderDashboard> => {
     state[key] = result.value;
   }
 
-  // Render panels
-  const panels = asArray(dashboard.panels);
+  // Render displays
+  const displays = asArray(dashboard.displays);
 
-  if (panels === undefined) {
+  if (displays === undefined) {
     return {
       entities: [],
-      errors: ['undefined or invalid property "panels"'],
+      errors: ['undefined or invalid property "displays"'],
     };
   }
 
   return {
-    entities: panels.map((panel) => renderEntity(panel, state)),
+    entities: displays.map((display) => renderEntity(display, state)),
     errors: [],
   };
 };
 
 const renderEntity = (input: unknown, state: RenderState): RenderEntity => {
-  const panel = asObject(input);
+  const display = asObject(input);
 
-  if (panel === undefined) {
+  if (display === undefined) {
     return {
-      errors: ["undefined or invalid panel"],
+      errors: ["undefined or invalid display"],
       labels: [],
       series: [],
     };
@@ -128,9 +128,9 @@ const renderEntity = (input: unknown, state: RenderState): RenderEntity => {
   const errors: string[] = [];
 
   // Render series from queries
-  const panelSeries = asArray(panel.series);
+  const displaySeries = asArray(display.series);
 
-  if (panelSeries === undefined) {
+  if (displaySeries === undefined) {
     return {
       errors: ['undefined or invalid property "series"'],
       labels: [],
@@ -138,10 +138,10 @@ const renderEntity = (input: unknown, state: RenderState): RenderEntity => {
     };
   }
 
-  const series = panelSeries.map((serie) => renderSerie(serie, state));
+  const series = displaySeries.map((serie) => renderSerie(serie, state));
 
   // Render labels
-  const labelKey = asString(panel.labels);
+  const labelKey = asString(display.labels);
   let labels;
 
   if (labelKey === undefined) {
@@ -163,7 +163,7 @@ const renderEntity = (input: unknown, state: RenderState): RenderEntity => {
     labels = labelValues.map(String);
   }
 
-  // Render panel
+  // Render display
   return { errors, labels, series };
 };
 
@@ -190,7 +190,7 @@ const renderSerie = (serie: unknown, state: RenderState): RenderSerie => {
 
   if (points === undefined) {
     return {
-      errors: [`query "${key}" is undefined`],
+      errors: [`source "${key}" is undefined`],
       name: "",
       points: [],
     };

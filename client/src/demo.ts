@@ -1,10 +1,10 @@
-import { ClientRenderEngine } from "./media/component";
+import { ClientRenderer } from "./dashboard/component";
 
 export const demo = {
-  panels: [
+  displays: [
     {
       title: "Color properties",
-      engine: ClientRenderEngine.LineChart,
+      renderer: ClientRenderer.LineChart,
       labels: "name",
       series: [
         ["luminance", "Luminance"],
@@ -13,12 +13,12 @@ export const demo = {
     },
     {
       title: "Number of characters",
-      engine: ClientRenderEngine.LineChart,
+      renderer: ClientRenderer.LineChart,
       labels: "name",
       series: [["length", "Length"]],
     },
   ],
-  queries: [
+  sources: [
     ["demo", "https://gydo.herokuapp.com/api/demo/data"],
     ["name", "$.demo.name"],
     ["luminance", "$.demo.luminance"],
