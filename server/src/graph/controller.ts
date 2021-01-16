@@ -119,6 +119,28 @@ const renderEntity = (
   return { errors, labels, series };
 };
 
+const renderName = (key: string): string => {
+  const uppercase = /[A-Z]/g;
+
+  while (true) {
+    const match = uppercase.exec(key);
+
+    if (match === null) {
+      break;
+    }
+
+    key =
+      key.substr(0, match.index) +
+      " " +
+      key.substr(match.index, match.length).toLowerCase() +
+      key.substr(match.index + match.length);
+
+    uppercase.lastIndex = match.index + match.length;
+  }
+
+  return key.substr(0, 1).toUpperCase() + key.substr(1);
+};
+
 const renderSerie = (
   key: string,
   style: ClientStyle,
@@ -136,7 +158,7 @@ const renderSerie = (
 
   return {
     errors: [],
-    name: style.name ?? key,
+    name: style.name ?? renderName(key),
     points: points.map(Number),
   };
 };
