@@ -50,9 +50,7 @@ const parseSerie = (
   }
 
   // Parse serie style
-  const style = serie[1] ? parseStyle(serie[1], `${scope}[1]`) : undefined;
-
-  return [key, style];
+  return serie[1] ? [key, parseStyle(serie[1], `${scope}[1]`)] : [key];
 };
 
 const parseSource = (

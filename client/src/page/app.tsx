@@ -1,44 +1,18 @@
 import React, { useEffect, useState } from "react";
 import { demo } from "../graph/demo";
 import { useScript } from "../dom/hook";
-import { ClientDashboard } from "../../../server/src/graph/interface";
 import { CompleteDashboard, format, parse, render } from "../graph/interface";
 import Dashboard from "../graph/components/dashboard";
-
-const draw = async (expression: string): Promise<CompleteDashboard> => {
-  try {
-    const client = parse(expression);
-
-    save(client);
-
-    return await render(client);
-  } catch (e) {
-    return {
-      displays: [],
-      entities: [],
-      errors: [e.toString()],
-      title: "",
-    };
-  }
-};
+import { ClientDashboard } from "../../../server/src/graph/interface";
 
 const load = () => {
   const href = new URL(window.location.href);
-  const expression = unescape(href.hash.slice(1));
 
-  try {
-    const dashboard = parse(expression);
-
-    return dashboard !== undefined ? format(dashboard, false) : "";
-  } catch (e) {
-    return expression;
-  }
+  return unescape(href.hash.slice(1));
 };
 
-const save = (dashboard: ClientDashboard | undefined) => {
-  const hash = dashboard !== undefined ? format(dashboard, true) : "";
-
-  window.location.hash = escape(hash);
+const save = (input: string) => {
+  window.location.hash = "#" + escape(input);
 };
 
 export default function App() {
@@ -47,11 +21,28 @@ export default function App() {
   const [dashboard, setDashboard] = useState<CompleteDashboard>();
   const [input, setInput] = useState(load);
 
-  const update = () => {
-    draw(input).then(setDashboard);
+  const changeDashboard = async (client: ClientDashboard | undefined) => {
+    const dashboard = await render(client);
+
+    save(format(client, true));
+    setDashboard(dashboard);
+    setInput(format(client, false));
   };
 
-  useEffect(update, []);
+  const updateDashboard = () => {
+    try {
+      changeDashboard(parse(input));
+    } catch (e) {
+      setDashboard({
+        displays: [],
+        entities: [],
+        errors: [e.toString()],
+        title: "",
+      });
+    }
+  };
+
+  useEffect(updateDashboard, []);
 
   return (
     <>
@@ -81,7 +72,7 @@ export default function App() {
           />
         </div>
         <div className="field">
-          <input onClick={update} type="button" value="Draw" />
+          <input onClick={updateDashboard} type="button" value="Draw" />
         </div>
       </div>
     </>

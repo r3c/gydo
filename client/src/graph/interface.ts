@@ -12,7 +12,14 @@ export type CompleteDashboard = RenderDashboard & {
   title: ClientDashboard["title"];
 };
 
-export const format = (dashboard: ClientDashboard, compact: boolean) => {
+export const format = (
+  dashboard: ClientDashboard | undefined,
+  compact: boolean
+) => {
+  if (dashboard === undefined) {
+    return "";
+  }
+
   return compact
     ? JSON.stringify(dashboard)
     : JSON.stringify(dashboard, null, 2);
