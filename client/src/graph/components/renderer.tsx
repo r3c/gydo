@@ -1,9 +1,11 @@
 import React, { useMemo } from "react";
-import { ClientRenderer } from "./component";
-import DebugRenderer from "./renderers/debugRenderer";
-import ErrorRenderer from "./renderers/errorRenderer";
-import LineChartRenderer from "./renderers/lineChartRenderer";
-import { RenderEntity } from "../server/graph/response";
+import DebugRenderer from "../renderers/debugRenderer";
+import ErrorRenderer from "../renderers/errorRenderer";
+import LineChartRenderer from "../renderers/lineChartRenderer";
+import {
+  ClientRenderer,
+  RenderEntity,
+} from "../../../../server/src/graph/interface";
 
 export type RendererProps = {
   entity: RenderEntity;

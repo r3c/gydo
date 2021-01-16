@@ -1,4 +1,4 @@
-import { RenderQuery } from "../response";
+import { RenderQuery } from "../interface";
 import fetch from "node-fetch";
 
 export async function evaluateFromHttp(

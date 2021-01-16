@@ -1,3 +1,25 @@
+export type ClientDashboard = {
+  displays: ClientDisplay[];
+  sources: [string, string][];
+  title: string;
+};
+
+export type ClientDisplay = {
+  labels?: string;
+  renderer?: ClientRenderer;
+  series: [string, ClientStyle?][];
+  title?: string;
+};
+
+export enum ClientRenderer {
+  Debug,
+  LineChart,
+}
+
+export type ClientStyle = {
+  name?: string;
+};
+
 export type RenderDashboard = {
   entities: RenderEntity[];
   errors: string[];

@@ -1,61 +1,38 @@
-import React, { useState } from "react";
-import { demo } from "../demo";
+import React, { useEffect, useState } from "react";
+import { demo } from "../graph/demo";
 import { useScript } from "../dom/hook";
-import { fetchJson } from "../network/http";
-import { ClientDashboard } from "../dashboard/component";
-import { RenderDashboard } from "../server/graph/response";
-import { graphRender } from "../server/graph/route";
-import { apiBase } from "../server/route";
-import Container, { Dashboard } from "../dashboard/container";
+import { ClientDashboard } from "../../../server/src/graph/interface";
+import { CompleteDashboard, format, parse, render } from "../graph/interface";
+import Dashboard from "../graph/components/dashboard";
 
-const format = (dashboard: ClientDashboard, compact: boolean) => {
-  return compact
-    ? JSON.stringify(dashboard)
-    : JSON.stringify(dashboard, null, 2);
+const draw = async (expression: string): Promise<CompleteDashboard> => {
+  try {
+    const client = parse(expression);
+
+    save(client);
+
+    return await render(client);
+  } catch (e) {
+    return {
+      displays: [],
+      entities: [],
+      errors: [e.toString()],
+      title: "",
+    };
+  }
 };
 
 const load = () => {
   const href = new URL(window.location.href);
-  const hash = unescape(href.hash.slice(1));
-
-  return hash;
-};
-
-const parse = (expression: string): ClientDashboard => {
-  if (expression.trim() === "") {
-    return {};
-  }
+  const expression = unescape(href.hash.slice(1));
 
   try {
-    return JSON.parse(expression) as ClientDashboard;
+    const dashboard = parse(expression);
+
+    return dashboard !== undefined ? format(dashboard, false) : "";
   } catch (e) {
-    return { errors: [`could not parse expression: ${e}`] };
+    return expression;
   }
-};
-
-const render = async (expression: string): Promise<Dashboard> => {
-  const client = parse(expression);
-
-  if (client.errors !== undefined && client.errors.length > 0) {
-    const errors = client.errors;
-
-    save(undefined);
-
-    return {
-      entities: [],
-      errors,
-    };
-  }
-
-  save(client);
-
-  const result = await fetchJson(`${apiBase}${graphRender}`, client);
-  const render = result as RenderDashboard;
-
-  return {
-    ...client,
-    ...render,
-  };
 };
 
 const save = (dashboard: ClientDashboard | undefined) => {
@@ -67,15 +44,21 @@ const save = (dashboard: ClientDashboard | undefined) => {
 export default function App() {
   useScript("https://cdn.jsdelivr.net/npm/chart.js@2.9.4");
 
-  const [dashboard, setDashboard] = useState<Dashboard>();
+  const [dashboard, setDashboard] = useState<CompleteDashboard>();
   const [input, setInput] = useState(load);
+
+  const update = () => {
+    draw(input).then(setDashboard);
+  };
+
+  useEffect(update, []);
 
   return (
     <>
       <h1>Graph Your Data Online</h1>
       {dashboard !== undefined &&
-      (dashboard.entities.length > 0 || dashboard.errors?.length > 0) ? (
-        <Container dashboard={dashboard} />
+      (dashboard.entities.length > 0 || dashboard.errors.length > 0) ? (
+        <Dashboard dashboard={dashboard} />
       ) : (
         <div className="container">
           <div className="form">
@@ -98,11 +81,7 @@ export default function App() {
           />
         </div>
         <div className="field">
-          <input
-            onClick={() => render(input).then(setDashboard)}
-            type="button"
-            value="Draw"
-          />
+          <input onClick={update} type="button" value="Draw" />
         </div>
       </div>
     </>

@@ -1,15 +1,19 @@
 import {
+  ClientDashboard,
+  ClientDisplay,
+  ClientStyle,
   RenderDashboard,
   RenderEntity,
   RenderQuery,
   RenderSerie,
   RenderState,
-} from "./response";
+} from "./interface";
 import { Router } from "express";
 import { evaluateFromHttp } from "./evaluators/http";
 import { evaluateFromJsonata } from "./evaluators/jsonata";
 import { graphRender } from "./route";
-import { asArray, asObject, asString } from "../dynamic/type";
+import { asArray } from "../dynamic/type";
+import { parseDashboard } from "./parser";
 
 type Evaluator = {
   evaluate: (expression: string, state: RenderState) => Promise<RenderQuery>;
@@ -30,48 +34,21 @@ const evaluators: Evaluator[] = [
 ];
 
 const renderDashboard = async (input: unknown): Promise<RenderDashboard> => {
-  const dashboard = asObject(input);
+  let dashboard: ClientDashboard;
 
-  if (dashboard === undefined) {
+  try {
+    dashboard = parseDashboard(input);
+  } catch (e) {
     return {
       entities: [],
-      errors: [`undefined or invalid dashboard`],
+      errors: [e.toString()],
     };
   }
 
   const state: RenderState = {};
 
   // Compute data from sources
-  const sources = asArray(dashboard.sources);
-
-  if (sources === undefined) {
-    return {
-      entities: [],
-      errors: [`undefined or invalid property "sources"`],
-    };
-  }
-
-  for (let i = 0; i < sources.length; ++i) {
-    const source = asArray(sources[i]);
-
-    if (source === undefined) {
-      return {
-        entities: [],
-        errors: [`undefined or invalid property "sources[${i}]"`],
-      };
-    }
-
-    const [key, expression] = source.map(asString);
-
-    if (key === undefined || expression === undefined) {
-      return {
-        entities: [],
-        errors: [
-          `undefined or invalid property "sources[${i}][0]" or "sources[${i}][1]"`,
-        ],
-      };
-    }
-
+  for (const [key, expression] of dashboard.sources) {
     const evaluator = evaluators.find(({ satisfy }) => satisfy(expression));
 
     if (evaluator === undefined) {
@@ -99,93 +76,54 @@ const renderDashboard = async (input: unknown): Promise<RenderDashboard> => {
   }
 
   // Render displays
-  const displays = asArray(dashboard.displays);
-
-  if (displays === undefined) {
-    return {
-      entities: [],
-      errors: ['undefined or invalid property "displays"'],
-    };
-  }
-
   return {
-    entities: displays.map((display) => renderEntity(display, state)),
+    entities: dashboard.displays.map((display) => renderEntity(display, state)),
     errors: [],
   };
 };
 
-const renderEntity = (input: unknown, state: RenderState): RenderEntity => {
-  const display = asObject(input);
-
-  if (display === undefined) {
-    return {
-      errors: ["undefined or invalid display"],
-      labels: [],
-      series: [],
-    };
-  }
-
+const renderEntity = (
+  display: ClientDisplay,
+  state: RenderState
+): RenderEntity => {
   const errors: string[] = [];
 
   // Render series from queries
-  const displaySeries = asArray(display.series);
-
-  if (displaySeries === undefined) {
-    return {
-      errors: ['undefined or invalid property "series"'],
-      labels: [],
-      series: [],
-    };
-  }
-
-  const series = displaySeries.map((serie) => renderSerie(serie, state));
+  const series = display.series.map(([key, style]) =>
+    renderSerie(key, style ?? {}, state)
+  );
 
   // Render labels
-  const labelKey = asString(display.labels);
   let labels;
 
-  if (labelKey === undefined) {
+  if (display.labels === undefined) {
     labels =
       series.length > 0
-        ? Array.from(Array(series[0].points!.length).keys()).map(String)
+        ? Array.from(Array(series[0].points.length).keys()).map(String)
         : [];
   } else {
-    const labelValues = asArray(state[labelKey]);
+    const unsafeLabels = asArray(state[display.labels]);
 
-    if (labelValues === undefined) {
+    if (unsafeLabels === undefined) {
       return {
-        errors: [...errors, `unknown key "${labelKey}" used in "labels"`],
+        errors: [...errors, `unknown key "${display.labels}" used in "labels"`],
         labels: [],
         series: [],
       };
     }
 
-    labels = labelValues.map(String);
+    labels = unsafeLabels.map(String);
   }
 
   // Render display
   return { errors, labels, series };
 };
 
-const renderSerie = (serie: unknown, state: RenderState): RenderSerie => {
-  const serieArray = asArray(serie);
-  const serieKey = asString(serie);
-
-  const [key, name] =
-    serieArray !== undefined
-      ? serieArray.map(asString)
-      : serieKey !== undefined
-      ? [serieKey, undefined]
-      : [undefined, undefined];
-
-  if (key === undefined) {
-    return {
-      errors: ["serie key is undefined"],
-      name: "",
-      points: [],
-    };
-  }
-
+const renderSerie = (
+  key: string,
+  style: ClientStyle,
+  state: RenderState
+): RenderSerie => {
   const points = asArray(state[key]);
 
   if (points === undefined) {
@@ -198,7 +136,7 @@ const renderSerie = (serie: unknown, state: RenderState): RenderSerie => {
 
   return {
     errors: [],
-    name: name ?? key,
+    name: style.name ?? key,
     points: points.map(Number),
   };
 };

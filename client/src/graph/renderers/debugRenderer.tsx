@@ -1,5 +1,5 @@
 import React from "react";
-import { RendererProps } from "../renderer";
+import { RendererProps } from "../components/renderer";
 
 export default function DebugRenderer(props: RendererProps) {
   const { entity } = props;

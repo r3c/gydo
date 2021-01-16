@@ -1,15 +1,13 @@
 import React from "react";
-import { ClientDashboard, ClientRenderer } from "./component";
-import { RenderDashboard } from "../server/graph/response";
+import { ClientRenderer } from "../../../../server/src/graph/interface";
+import { CompleteDashboard } from "../interface";
 import Renderer from "./renderer";
 
-export type Dashboard = ClientDashboard & RenderDashboard;
-
 type Props = {
-  dashboard: Dashboard;
+  dashboard: CompleteDashboard;
 };
 
-export default function Container(props: Props) {
+export default function Dashboard(props: Props) {
   const { dashboard } = props;
 
   const displays = dashboard.displays ?? [];

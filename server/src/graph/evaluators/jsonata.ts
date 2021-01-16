@@ -1,5 +1,5 @@
 import jsonata from "jsonata";
-import { RenderQuery, RenderState } from "../response";
+import { RenderQuery, RenderState } from "../interface";
 
 export async function evaluateFromJsonata(
   expression: string,

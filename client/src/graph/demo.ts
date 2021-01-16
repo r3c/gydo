@@ -1,21 +1,21 @@
-import { ClientRenderer } from "./dashboard/component";
+import {
+  ClientDashboard,
+  ClientRenderer,
+} from "../../../server/src/graph/interface";
 
-export const demo = {
+export const demo: ClientDashboard = {
   displays: [
     {
       title: "Color properties",
       renderer: ClientRenderer.LineChart,
       labels: "name",
-      series: [
-        ["luminance", "Luminance"],
-        ["hue", "Hue"],
-      ],
+      series: [["luminance"], ["hue"]],
     },
     {
       title: "Number of characters",
       renderer: ClientRenderer.LineChart,
       labels: "name",
-      series: [["length", "Length"]],
+      series: [["length"]],
     },
   ],
   sources: [

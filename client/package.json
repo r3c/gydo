@@ -3,43 +3,19 @@
   "version": "0.1.0",
   "description": "Graph Your Data Online",
   "scripts": {
-    "build": "react-scripts build",
-    "watch": "react-scripts start",
-    "watch:staging": "cross-env REACT_APP_NETWORK_HTTP_BASE=https://gydo.herokuapp.com/ react-scripts start"
+    "build": "tsc && vite build",
+    "watch": "vite"
   },
   "dependencies": {
-    "@testing-library/jest-dom": "^5.11.6",
-    "@testing-library/react": "^11.2.2",
-    "@testing-library/user-event": "^12.2.2",
-    "@types/jest": "^26.0.15",
-    "@types/node": "^12.19.6",
-    "@types/react": "^16.14.1",
-    "@types/react-dom": "^16.9.10",
-    "cross-env": "^7.0.2",
-    "http-proxy-middleware": "^1.0.6",
-    "react": "^17.0.1",
-    "react-dom": "^17.0.1",
-    "react-scripts": "^4.0.0",
-    "sass": "^1.29.0",
-    "typescript": "^3.9.7",
-    "web-vitals": "^0.2.4"
+    "react": "^17.0.0",
+    "react-dom": "^17.0.0"
   },
-  "eslintConfig": {
-    "extends": [
-      "react-app",
-      "react-app/jest"
-    ]
-  },
-  "browserslist": {
-    "production": [
-      ">0.2%",
-      "not dead",
-      "not op_mini all"
-    ],
-    "development": [
-      "last 1 chrome version",
-      "last 1 firefox version",
-      "last 1 safari version"
-    ]
+  "devDependencies": {
+    "@types/react": "^17.0.0",
+    "@types/react-dom": "^17.0.0",
+    "@vitejs/plugin-react-refresh": "^1.1.0",
+    "typescript": "^4.1.2",
+    "vite": "^2.0.0-beta.12",
+    "sass": "^1.32.4"
   }
 }

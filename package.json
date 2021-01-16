@@ -5,10 +5,10 @@
   "main": "index.js",
   "scripts": {
     "build": "npm run build:client && npm run build:server",
-    "build:client": "cd client && npm run build && cd .. && copyfiles -u 2 'client/build/**/*' dist/client",
+    "build:client": "cd client && npm run build && cd .. && copyfiles -u 2 'client/dist/**/*' dist/client",
     "build:server": "cd server && npm run build",
     "install": "npm run install:client && npm run install:server",
-    "install:client": "symlink-dir server/src client/src/server && cd client && npm install",
+    "install:client": "cd client && npm install",
     "install:server": "cd server && npm install",
     "start": "npm run start:server",
     "start:server": "cd server && npm run start",
@@ -32,7 +32,6 @@
   "homepage": "https://github.com/r3c/gydo#readme",
   "devDependencies": {
     "concurrently": "^5.3.0",
-    "copyfiles": "^2.4.0",
-    "symlink-dir": "^4.1.0"
+    "copyfiles": "^2.4.0"
   }
 }

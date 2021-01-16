@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from "react";
-import { RendererProps } from "../renderer";
+import { RendererProps } from "../components/renderer";
 
 // FIXME: import @type
 declare const Chart: any;
