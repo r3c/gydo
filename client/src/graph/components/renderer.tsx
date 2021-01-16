@@ -6,6 +6,7 @@ import {
   ClientRenderer,
   RenderEntity,
 } from "../../../../server/src/graph/interface";
+import BarChartRenderer from "../renderers/barChartRenderer";
 
 export type RendererProps = {
   entity: RenderEntity;
@@ -18,6 +19,9 @@ type Props = RendererProps & {
 
 function getRenderer(renderer: ClientRenderer) {
   switch (renderer) {
+    case ClientRenderer.BarChart:
+      return BarChartRenderer;
+
     case ClientRenderer.Debug:
       return DebugRenderer;
 

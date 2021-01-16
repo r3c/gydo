@@ -13,7 +13,7 @@ export const demo: ClientDashboard = {
     },
     {
       title: "Number of characters",
-      renderer: ClientRenderer.LineChart,
+      renderer: ClientRenderer.BarChart,
       labels: "name",
       series: [["length"]],
     },

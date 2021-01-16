@@ -14,6 +14,7 @@ export type ClientDisplay = {
 export enum ClientRenderer {
   Debug,
   LineChart,
+  BarChart,
 }
 
 export type ClientStyle = {
