@@ -7,7 +7,7 @@ function getOrCreatePool() {
     return connectionPool;
   }
 
-  const connectionString = process.env.JAWSDB_URL;
+  const connectionString = process.env.DATABASE_URL;
 
   if (connectionString === undefined) {
     throw new Error("connection string undefined");
