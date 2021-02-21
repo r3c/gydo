@@ -4,11 +4,16 @@ import { useScript } from "../dom/hook";
 import {
   CompleteDashboard,
   format,
+  load,
   parse,
   render,
   save,
 } from "../graph/interface";
 import Dashboard from "../graph/components/dashboard";
+
+const urlAbsolute = (relative: string) => {
+  return new URL(relative, location.href).href;
+};
 
 const urlLoad = () => {
   const href = new URL(window.location.href);
@@ -29,20 +34,20 @@ export default function App() {
   useScript("https://cdn.jsdelivr.net/npm/chart.js@2.9.4");
 
   const [dashboard, setDashboard] = useState<CompleteDashboard>();
-  const [input, setInput] = useState(urlLoad);
+  const [input, setInput] = useState("");
   const [savePassphrase, setSavePassphrase] = useState("");
   const [saveResult, setSaveResult] = useState<SaveResult>();
 
-  const renderDashboard = async () => {
+  const renderDashboard = async (input: string) => {
     try {
       const client = parse(input);
 
+      setInput(format(client, false));
       urlSave(format(client, true));
 
       const dashboard = client !== undefined ? await render(client) : undefined;
 
       setDashboard(dashboard);
-      setInput(format(client, false));
     } catch (e) {
       setDashboard({
         displays: [],
@@ -53,7 +58,7 @@ export default function App() {
     }
   };
 
-  const saveDashboard = async () => {
+  const saveDashboard = async (input: string) => {
     try {
       const dashboard = parse(input);
 
@@ -72,7 +77,33 @@ export default function App() {
   };
 
   useEffect(() => {
-    renderDashboard();
+    const payload = urlLoad();
+
+    if (/^[-0-9a-z]+$/.test(payload)) {
+      load(payload)
+        .then((response) => {
+          if (response.errors.length > 0) {
+            setDashboard({
+              displays: [],
+              entities: [],
+              errors: response.errors,
+              title: "",
+            });
+          } else {
+            renderDashboard(response.expression);
+          }
+        })
+        .catch((e) => {
+          setDashboard({
+            displays: [],
+            entities: [],
+            errors: [e.toString()],
+            title: "",
+          });
+        });
+    } else {
+      renderDashboard(payload);
+    }
   }, []);
 
   return (
@@ -107,13 +138,13 @@ export default function App() {
         <div className="group">
           <input
             className="field"
-            onClick={renderDashboard}
+            onClick={() => renderDashboard(input)}
             type="button"
             value="Draw"
           />
           <input
             className="field"
-            onClick={saveDashboard}
+            onClick={() => saveDashboard(input)}
             type="button"
             value="Save"
           />
@@ -131,7 +162,7 @@ export default function App() {
                 <span>
                   Dashboard URL:{" "}
                   <a href={`#${saveResult.key}`}>
-                    {new URL("#" + saveResult.key, location.href).href}
+                    {urlAbsolute(`#${saveResult.key}`)}
                   </a>
                 </span>
               ) : (

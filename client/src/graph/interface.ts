@@ -1,10 +1,15 @@
 import {
   ClientDashboard,
+  LoadResponse,
   RenderDashboard,
   SaveResponse,
 } from "../../../server/src/graph/interface";
 import { parseDashboard } from "../../../server/src/graph/parser";
-import { graphRender, graphSave } from "../../../server/src/graph/route";
+import {
+  graphLoad,
+  graphRender,
+  graphSave,
+} from "../../../server/src/graph/route";
 import { apiBase } from "../../../server/src/route";
 import { fetchJson } from "../network/http";
 
@@ -24,6 +29,18 @@ export const format = (
   return compact
     ? JSON.stringify(dashboard)
     : JSON.stringify(dashboard, null, 2);
+};
+
+export const load = async (key: string): Promise<LoadResponse> => {
+  try {
+    const result = await fetchJson(`${apiBase}${graphLoad}`, {
+      key,
+    });
+
+    return result as LoadResponse;
+  } catch (e) {
+    return { errors: [e.toString()], expression: "" };
+  }
 };
 
 export const parse = (expression: string): ClientDashboard | undefined => {
@@ -70,6 +87,6 @@ export const save = async (
 
     return result as SaveResponse;
   } catch (e) {
-    return { errors: [e.toString()] };
+    return { errors: [e.toString()], key: "" };
   }
 };

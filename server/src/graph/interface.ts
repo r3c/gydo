@@ -21,6 +21,15 @@ export type ClientStyle = {
   name?: string;
 };
 
+export type LoadRequest = {
+  key: string;
+};
+
+export type LoadResponse = {
+  errors: string[];
+  expression: string;
+};
+
 export type RenderDashboard = {
   entities: RenderEntity[];
   errors: string[];
@@ -54,5 +63,5 @@ export type SaveRequest = {
 
 export type SaveResponse = {
   errors: string[];
-  key?: string;
+  key: string;
 };
