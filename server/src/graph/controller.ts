@@ -1,39 +1,25 @@
+import { createHmac } from "crypto";
+import { Router } from "express";
+import { mariadbQuery } from "../network/mariadb";
 import {
   ClientDashboard,
-  ClientDisplay,
-  ClientStyle,
   RenderDashboard,
-  RenderEntity,
-  RenderQuery,
-  RenderSerie,
-  RenderState,
+  SaveRequest,
+  SaveResponse,
 } from "./interface";
-import { Router } from "express";
-import { evaluateFromHttp } from "./evaluators/http";
-import { evaluateFromJsonata } from "./evaluators/jsonata";
-import { graphRender } from "./route";
-import { asArray } from "../dynamic/type";
+import { graphRender, graphSave } from "./route";
 import { parseDashboard } from "./parser";
+import { renderDashboard } from "./renderer";
+import { asObject, asString } from "../dynamic/type";
 
-type Evaluator = {
-  evaluate: (expression: string, state: RenderState) => Promise<RenderQuery>;
-  satisfy: (expression: string) => boolean;
+const makeKey = (title: string) => {
+  return title
+    .toLowerCase()
+    .replace(/[^0-9a-z]/, "-")
+    .replace(/-+/, "-");
 };
 
-const evaluators: Evaluator[] = [
-  // Fetch from HTTP or HTTP URL
-  {
-    evaluate: evaluateFromHttp,
-    satisfy: (expression: string) => /^https?:\/\//.test(expression),
-  },
-  // Evaluate Jsonata expression
-  {
-    evaluate: evaluateFromJsonata,
-    satisfy: (expression: string) => /^\$/.test(expression),
-  },
-];
-
-const renderDashboard = async (input: unknown): Promise<RenderDashboard> => {
+const render = async (input: unknown): Promise<RenderDashboard> => {
   let dashboard: ClientDashboard;
 
   try {
@@ -45,132 +31,76 @@ const renderDashboard = async (input: unknown): Promise<RenderDashboard> => {
     };
   }
 
-  const state: RenderState = {};
-
-  // Compute data from sources
-  for (const [key, expression] of dashboard.sources) {
-    const evaluator = evaluators.find(({ satisfy }) => satisfy(expression));
-
-    if (evaluator === undefined) {
-      return {
-        entities: [],
-        errors: [
-          `cannot evaluate source "${key}": unrecognized expression "${expression}"`,
-        ],
-      };
-    }
-
-    const { evaluate } = evaluator;
-    const result = await evaluate(expression, state);
-
-    if (result.errors.length > 0) {
-      return {
-        entities: [],
-        errors: result.errors.map(
-          (error) => `cannot evaluate source "${key}": ${error}`
-        ),
-      };
-    }
-
-    state[key] = result.value;
-  }
-
-  // Render displays
-  return {
-    entities: dashboard.displays.map((display) => renderEntity(display, state)),
-    errors: [],
-  };
+  return renderDashboard(dashboard);
 };
 
-const renderEntity = (
-  display: ClientDisplay,
-  state: RenderState
-): RenderEntity => {
-  const errors: string[] = [];
+const save = async (input: unknown): Promise<SaveResponse> => {
+  const saveRequest = asObject<SaveRequest>(input);
+  const passphrase = asString(saveRequest?.passphrase);
 
-  // Render series from queries
-  const series = display.series.map(([key, style]) =>
-    renderSerie(key, style ?? {}, state)
+  if (saveRequest === undefined || passphrase === undefined) {
+    throw new Error("invalid request");
+  }
+
+  let dashboard: ClientDashboard;
+
+  try {
+    dashboard = parseDashboard(saveRequest?.dashboard);
+  } catch (e) {
+    return { errors: [e.toString()] };
+  }
+
+  const key = makeKey(dashboard.title);
+
+  const rows = await mariadbQuery(
+    "SELECT `secret` FROM dashboard WHERE `key` = ?",
+    [key, passphrase]
   );
 
-  // Render labels
-  let labels;
+  const secret = createHmac("sha256", key).update(passphrase).digest("base64");
 
-  if (display.labels === undefined) {
-    labels =
-      series.length > 0
-        ? Array.from(Array(series[0].points.length).keys()).map(String)
-        : [];
-  } else {
-    const unsafeLabels = asArray(state[display.labels]);
-
-    if (unsafeLabels === undefined) {
-      return {
-        errors: [...errors, `unknown key "${display.labels}" used in "labels"`],
-        labels: [],
-        series: [],
-      };
-    }
-
-    labels = unsafeLabels.map(String);
-  }
-
-  // Render display
-  return { errors, labels, series };
-};
-
-const renderName = (key: string): string => {
-  const uppercase = /[A-Z]/g;
-
-  while (true) {
-    const match = uppercase.exec(key);
-
-    if (match === null) {
-      break;
-    }
-
-    key =
-      key.substr(0, match.index) +
-      " " +
-      key.substr(match.index, match.length).toLowerCase() +
-      key.substr(match.index + match.length);
-
-    uppercase.lastIndex = match.index + match.length;
-  }
-
-  return key.substr(0, 1).toUpperCase() + key.substr(1);
-};
-
-const renderSerie = (
-  key: string,
-  style: ClientStyle,
-  state: RenderState
-): RenderSerie => {
-  const points = asArray(state[key]);
-
-  if (points === undefined) {
+  if (rows.length > 0 && rows[0]["secret"] !== secret) {
     return {
-      errors: [`source "${key}" is undefined`],
-      name: "",
-      points: [],
+      errors: [
+        "This title is already used, please provide passphrase to overwrite it or use a different title",
+      ],
     };
   }
 
-  return {
-    errors: [],
-    name: style.name ?? renderName(key),
-    points: points.map(Number),
-  };
+  const result = await mariadbQuery(
+    "REPLACE INTO `dashboard` (`key`, `secret`, `data`) VALUES (?, ?, ?)",
+    [key, secret, JSON.stringify(dashboard)]
+  );
+
+  if (result.affectedRows === 1) {
+    return { errors: [], key };
+  } else {
+    return { errors: ["Could not save dashboard"] };
+  }
 };
 
 export const register = (router: Router) => {
   router.post(`${graphRender}`, async (request, response) => {
     try {
-      const rendering = await renderDashboard(request.body);
+      const rendering = await render(request.body);
 
       response.json(rendering);
     } catch (error) {
       response.json({ error });
+    }
+  });
+
+  router.post(`${graphSave}`, async (request, response) => {
+    try {
+      const result = await save(request.body);
+
+      if (result !== undefined) {
+        response.status(400).json(result);
+      } else {
+        response.status(200).json({});
+      }
+    } catch (e) {
+      response.status(500).json({ errors: [e.toString()] });
     }
   });
 };

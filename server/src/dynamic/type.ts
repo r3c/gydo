@@ -1,4 +1,4 @@
-type Object = { [key: string]: unknown };
+type Loose<T> = { [key in keyof T]: unknown };
 
 export function asArray(value: unknown): unknown[] | undefined {
   return Array.isArray(value) ? value : undefined;
@@ -8,9 +8,9 @@ export function asNumber(value: unknown): number | undefined {
   return typeof value === "number" ? value : undefined;
 }
 
-export function asObject(value: unknown): Object | undefined {
+export function asObject<T>(value: unknown): Loose<T> | undefined {
   return typeof value === "object" && value !== null
-    ? (value as Object)
+    ? (value as Loose<T>)
     : undefined;
 }
 

@@ -46,3 +46,13 @@ export type RenderSerie = {
 export type RenderState = {
   [key: string]: unknown;
 };
+
+export type SaveRequest = {
+  dashboard: ClientDashboard;
+  passphrase: string;
+};
+
+export type SaveResponse = {
+  errors: string[];
+  key?: string;
+};

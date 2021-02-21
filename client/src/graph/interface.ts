@@ -1,9 +1,10 @@
 import {
   ClientDashboard,
   RenderDashboard,
+  SaveResponse,
 } from "../../../server/src/graph/interface";
 import { parseDashboard } from "../../../server/src/graph/parser";
-import { graphRender } from "../../../server/src/graph/route";
+import { graphRender, graphSave } from "../../../server/src/graph/route";
 import { apiBase } from "../../../server/src/route";
 import { fetchJson } from "../network/http";
 
@@ -36,25 +37,16 @@ export const parse = (expression: string): ClientDashboard | undefined => {
 };
 
 export const render = async (
-  client: ClientDashboard | undefined
+  dashboard: ClientDashboard
 ): Promise<CompleteDashboard> => {
   try {
-    if (client === undefined) {
-      return {
-        displays: [],
-        entities: [],
-        errors: [],
-        title: "",
-      };
-    }
-
-    const result = await fetchJson(`${apiBase}${graphRender}`, client);
+    const result = await fetchJson(`${apiBase}${graphRender}`, dashboard);
     const render = result as RenderDashboard;
 
     return {
       ...render,
-      displays: client.displays,
-      title: client.title,
+      displays: dashboard.displays,
+      title: dashboard.title,
     };
   } catch (e) {
     return {
@@ -63,5 +55,21 @@ export const render = async (
       errors: [e],
       title: "",
     };
+  }
+};
+
+export const save = async (
+  dashboard: ClientDashboard,
+  passphrase: string
+): Promise<SaveResponse> => {
+  try {
+    const result = await fetchJson(`${apiBase}${graphSave}`, {
+      dashboard,
+      passphrase,
+    });
+
+    return result as SaveResponse;
+  } catch (e) {
+    return { errors: [e.toString()] };
   }
 };

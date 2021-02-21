@@ -1,37 +1,48 @@
 import React, { useEffect, useState } from "react";
 import { demo } from "../graph/demo";
 import { useScript } from "../dom/hook";
-import { CompleteDashboard, format, parse, render } from "../graph/interface";
+import {
+  CompleteDashboard,
+  format,
+  parse,
+  render,
+  save,
+} from "../graph/interface";
 import Dashboard from "../graph/components/dashboard";
-import { ClientDashboard } from "../../../server/src/graph/interface";
 
-const load = () => {
+const urlLoad = () => {
   const href = new URL(window.location.href);
 
   return unescape(href.hash.slice(1));
 };
 
-const save = (input: string) => {
+const urlSave = (input: string) => {
   window.location.hash = "#" + escape(input);
+};
+
+type SaveResult = {
+  error: string | undefined;
+  key: string | undefined;
 };
 
 export default function App() {
   useScript("https://cdn.jsdelivr.net/npm/chart.js@2.9.4");
 
   const [dashboard, setDashboard] = useState<CompleteDashboard>();
-  const [input, setInput] = useState(load);
+  const [input, setInput] = useState(urlLoad);
+  const [savePassphrase, setSavePassphrase] = useState("");
+  const [saveResult, setSaveResult] = useState<SaveResult>();
 
-  const changeDashboard = async (client: ClientDashboard | undefined) => {
-    const dashboard = await render(client);
-
-    save(format(client, true));
-    setDashboard(dashboard);
-    setInput(format(client, false));
-  };
-
-  const updateDashboard = () => {
+  const renderDashboard = async () => {
     try {
-      changeDashboard(parse(input));
+      const client = parse(input);
+
+      urlSave(format(client, true));
+
+      const dashboard = client !== undefined ? await render(client) : undefined;
+
+      setDashboard(dashboard);
+      setInput(format(client, false));
     } catch (e) {
       setDashboard({
         displays: [],
@@ -42,7 +53,27 @@ export default function App() {
     }
   };
 
-  useEffect(updateDashboard, []);
+  const saveDashboard = async () => {
+    try {
+      const dashboard = parse(input);
+
+      if (dashboard !== undefined) {
+        const result = await save(dashboard, savePassphrase);
+
+        if (result.errors.length > 0) {
+          setSaveResult({ error: result.errors.join(", "), key: undefined });
+        } else {
+          setSaveResult({ error: undefined, key: result.key });
+        }
+      }
+    } catch (e) {
+      setSaveResult({ error: e.toString(), key: undefined });
+    }
+  };
+
+  useEffect(() => {
+    renderDashboard();
+  }, []);
 
   return (
     <>
@@ -53,8 +84,9 @@ export default function App() {
       ) : (
         <div className="container">
           <div className="form">
-            <div className="field">
+            <div className="group">
               <input
+                className="field"
                 type="button"
                 onClick={() => setInput(format(demo, false))}
                 value="Load demo dashboard"
@@ -64,15 +96,49 @@ export default function App() {
         </div>
       )}
       <div className="container form">
-        <h2>Input dashboard</h2>
-        <div className="field">
+        <h2>Input</h2>
+        <div className="group">
           <textarea
+            className="field"
             value={input}
             onChange={(event) => setInput(event.target.value)}
           />
         </div>
-        <div className="field">
-          <input onClick={updateDashboard} type="button" value="Draw" />
+        <div className="group">
+          <input
+            className="field"
+            onClick={renderDashboard}
+            type="button"
+            value="Draw"
+          />
+          <input
+            className="field"
+            onClick={saveDashboard}
+            type="button"
+            value="Save"
+          />
+          <span className="field">
+            Passphrase:{" "}
+            <input
+              type="password"
+              value={savePassphrase}
+              onChange={(event) => setSavePassphrase(event.target.value)}
+            />
+          </span>
+          {saveResult && (
+            <span className="field">
+              {saveResult.key ? (
+                <span>
+                  Dashboard URL:{" "}
+                  <a href={`#${saveResult.key}`}>
+                    {new URL("#" + saveResult.key, location.href).href}
+                  </a>
+                </span>
+              ) : (
+                saveResult.error ?? "Unknown error"
+              )}
+            </span>
+          )}
         </div>
       </div>
     </>

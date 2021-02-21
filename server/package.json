@@ -10,8 +10,10 @@
   "author": "Remi Caput",
   "license": "MIT",
   "dependencies": {
+    "dotenv": "^8.2.0",
     "express": "^4.17.1",
     "jsonata": "^1.8.4",
+    "mariadb": "^2.5.2",
     "node-fetch": "^2.6.1"
   },
   "devDependencies": {

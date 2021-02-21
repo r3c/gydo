@@ -6,10 +6,8 @@ import {
 } from "./interface";
 import { asArray, asNumber, asObject, asString } from "../dynamic/type";
 
-type Loose<T> = { [key in keyof T]: unknown };
-
 const parseDisplay = (unsafeDisplay: unknown, scope: string) => {
-  const display = asObject(unsafeDisplay) as Loose<ClientDisplay> | undefined;
+  const display = asObject<ClientDisplay>(unsafeDisplay);
 
   if (display === undefined) {
     throw new Error(`undefined or invalid property "${scope}"`);
@@ -75,7 +73,7 @@ const parseSource = (
 };
 
 const parseStyle = (unsafeStyle: unknown, scope: string): ClientStyle => {
-  const style = asObject(unsafeStyle) as Loose<ClientStyle>;
+  const style = asObject<ClientStyle>(unsafeStyle);
 
   if (style === undefined) {
     throw new Error(`undefined or invalid property "${scope}"`);
@@ -87,9 +85,7 @@ const parseStyle = (unsafeStyle: unknown, scope: string): ClientStyle => {
 };
 
 export const parseDashboard = (unsafeDashboard: unknown): ClientDashboard => {
-  const dashboard = asObject(unsafeDashboard) as
-    | Loose<ClientDashboard>
-    | undefined;
+  const dashboard = asObject<ClientDashboard>(unsafeDashboard);
 
   if (dashboard === undefined) {
     throw new Error("undefined or invalid dashboard");
@@ -118,7 +114,11 @@ export const parseDashboard = (unsafeDashboard: unknown): ClientDashboard => {
   );
 
   // Parse title
-  const title = asString(dashboard.title) ?? "Untitled dashboard";
+  const title = asString(dashboard.title);
+
+  if (title === undefined) {
+    throw new Error('undefined or invalid property "title"');
+  }
 
   return { displays, sources, title };
 };
