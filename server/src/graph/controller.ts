@@ -40,8 +40,8 @@ const load = async (input: unknown): Promise<LoadResponse> => {
 const makeKey = (title: string) => {
   return title
     .toLowerCase()
-    .replace(/[^0-9a-z]/, "-")
-    .replace(/-+/, "-");
+    .replace(/[^0-9a-z]/g, "-")
+    .replace(/-+/g, "-");
 };
 
 const render = async (input: unknown): Promise<RenderDashboard> => {
