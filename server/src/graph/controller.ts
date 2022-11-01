@@ -52,7 +52,7 @@ const render = async (input: unknown): Promise<RenderDashboard> => {
   } catch (e) {
     return {
       entities: [],
-      errors: [e.toString()],
+      errors: [`${e}`],
     };
   }
 
@@ -72,7 +72,7 @@ const save = async (input: unknown): Promise<SaveResponse> => {
   try {
     dashboard = parseDashboard(request?.dashboard);
   } catch (e) {
-    return { errors: [e.toString()], key: "" };
+    return { errors: [`${e}`], key: "" };
   }
 
   const key = makeKey(dashboard.title);
@@ -112,7 +112,7 @@ export const register = (router: Router) => {
 
       response.json(result);
     } catch (e) {
-      response.status(500).json({ errors: [e.toString()] });
+      response.status(500).json({ errors: [`${e}`] });
     }
   });
 
@@ -122,7 +122,7 @@ export const register = (router: Router) => {
 
       response.json(result);
     } catch (e) {
-      response.status(500).json({ errors: [e.toString()] });
+      response.status(500).json({ errors: [`${e}`] });
     }
   });
 
@@ -136,7 +136,7 @@ export const register = (router: Router) => {
         response.status(400).json(result);
       }
     } catch (e) {
-      response.status(500).json({ errors: [e.toString()] });
+      response.status(500).json({ errors: [`${e}`] });
     }
   });
 };

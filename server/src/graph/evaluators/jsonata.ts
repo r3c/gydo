@@ -1,4 +1,4 @@
-import jsonata from "jsonata";
+import jsonata, { JsonataError } from "jsonata";
 import { RenderQuery, RenderState } from "../interface";
 
 export async function evaluateFromJsonata(
@@ -14,8 +14,10 @@ export async function evaluateFromJsonata(
       value,
     };
   } catch (error) {
+    const jError = error as JsonataError;
+
     return {
-      errors: [`${error.message} at character ${error.position}`],
+      errors: [`${jError.message} at character ${jError.position}`],
       value: undefined,
     };
   }

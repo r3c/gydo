@@ -52,7 +52,7 @@ export default function App() {
       setDashboard({
         displays: [],
         entities: [],
-        errors: [e.toString()],
+        errors: [`${e}`],
         title: "",
       });
     }
@@ -72,7 +72,7 @@ export default function App() {
         }
       }
     } catch (e) {
-      setSaveResult({ error: e.toString(), key: undefined });
+      setSaveResult({ error: `${e}`, key: undefined });
     }
   };
 

@@ -39,7 +39,7 @@ export const load = async (key: string): Promise<LoadResponse> => {
 
     return result as LoadResponse;
   } catch (e) {
-    return { errors: [e.toString()], expression: "" };
+    return { errors: [`${e}`], expression: "" };
   }
 };
 
@@ -69,7 +69,7 @@ export const render = async (
     return {
       displays: [],
       entities: [],
-      errors: [e],
+      errors: [`${e}`],
       title: "",
     };
   }
@@ -87,6 +87,6 @@ export const save = async (
 
     return result as SaveResponse;
   } catch (e) {
-    return { errors: [e.toString()], key: "" };
+    return { errors: [`${e}`], key: "" };
   }
 };
