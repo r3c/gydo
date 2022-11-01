@@ -14,7 +14,7 @@
     "express": "^4.17.1",
     "jsonata": "^1.8.4",
     "mariadb": "^3.0.2",
-    "node-fetch": "^2.6.1"
+    "node-fetch": "^3.2.10"
   },
   "devDependencies": {
     "@types/express": "^4.17.8",
