@@ -10,7 +10,7 @@
   "author": "Remi Caput",
   "license": "MIT",
   "dependencies": {
-    "dotenv": "^16.0.3",
+    "dotenv": "^17.0.0",
     "express": "^5.1.0",
     "jsonata": "^2.0.0",
     "mariadb": "^3.0.2",
