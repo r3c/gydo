@@ -13,7 +13,7 @@
     "dotenv": "^18.0.0",
     "express": "^5.1.0",
     "jsonata": "^2.0.0",
-    "mariadb": "^3.0.2",
+    "mariadb": "^3.5.5",
     "node-fetch": "^3.2.10"
   },
   "devDependencies": {

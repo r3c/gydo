@@ -1,6 +1,6 @@
-import mariadb from "mariadb";
+import { type Pool, createPool } from 'mariadb';
 
-let connectionPool: mariadb.Pool | undefined = undefined;
+let connectionPool: Pool | undefined = undefined;
 
 function getOrCreatePool() {
   if (connectionPool !== undefined) {
@@ -13,7 +13,7 @@ function getOrCreatePool() {
     throw new Error("connection string undefined");
   }
 
-  const newConnectionPool = mariadb.createPool(
+  const newConnectionPool = createPool(
     connectionString.replace("mysql://", "mariadb://")
   );
 
